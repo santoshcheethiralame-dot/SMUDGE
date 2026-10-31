@@ -8,6 +8,12 @@
       "port": 8872
     },
     {
+      "name": "game-prod",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "game", "run", "preview"],
+      "port": 8872
+    },
+    {
       "name": "server",
       "runtimeExecutable": "C:\\Users\\carbo\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe",
       "runtimeArgs": ["-m", "uvicorn", "api:app", "--port", "8873", "--app-dir", "server"],

@@ -30,7 +30,10 @@ whole interrogation**, and text on screen is kept to what the game already shows
 | Voice | Hold-to-talk in the ask box (Chrome only, needs mic permission). Typing is the default. |
 | Skip the cold open | any key |
 
-Seed 1000 is set server-side. Check the lab shows Δt = 1.50 s on first run; if not, restart the server.
+`?judges` pins the first Midnight Fall to seed 1000 (Replay then picks new numbers; `?seed=1000` pins every
+case). Check the lab shows Δt = 1.50 s on first run; if not, check the URL has `?judges`.
+**Tap nothing before beat 3.** One stray chip changes what Varnish remembers, and the stage line then runs live
+(about 4 s, a different reply). If anyone touched the game, reload the page right before going on.
 **The warm cache follows the stage path:** Varnish "Your balcony?", then free-type "Just admit you pushed him."
 (beats 3–4), and nothing to Varnish in between. After that, Rivet "Your balcony?", Pendle "Your balcony?", Pendle
 "The ghost?" and Varnish "The cry?" are cached too, in that order. Change the path and Santosh must rerun

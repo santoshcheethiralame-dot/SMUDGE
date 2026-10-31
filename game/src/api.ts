@@ -102,7 +102,11 @@ function offlineLab(c: CaseData, w: Record<string, number>): LabResult {
 }
 
 // ?fixture serves the Midnight Fall from public/fixtures/fall_case.json, so the case plays with no server.
-const FIX = new URLSearchParams(location.search).has("fixture");
+const Q = new URLSearchParams(location.search);
+const FIX = Q.has("fixture");
+// ?seed=N pins every case; ?judges pins the first Midnight Fall to the rehearsed seed (replays still vary)
+const SEED = Number(Q.get("seed")) || undefined;
+let demoSeed = Q.has("judges") ? 1000 : undefined;
 interface FallFixture {
   case_new: CaseData;
   lab_check_ok: { reply: LabResult };
@@ -137,6 +141,8 @@ export const api = {
       this.current = (await loadFall()).case_new;
       return this.current;
     }
+    if (kit === "fall") { seed ??= SEED ?? demoSeed; demoSeed = undefined; }
+    else seed ??= SEED;
     let c: CaseData | null = null;
     for (let i = 0; i < 3 && !c; i++) {
       c = await post<CaseData>("/case/new", { seed: seed ?? null, kit }, 8000);

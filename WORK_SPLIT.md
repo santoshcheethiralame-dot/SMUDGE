@@ -13,8 +13,30 @@ Read [the case spec](docs/superpowers/specs/2026-10-31-midnight-fall.md) whoever
 art in `game/public/assets/case10/`, suspects that plan, draft, critique and redraft every reply, stress, the live
 `/trace` feed, the warm demo cache, and on Kushal's side the Observatory, the mic, fixture mode and the case folder.
 
-**The blocker:** the case points at a `LabFall` scene that doesn't exist yet, so walking into the lab breaks it.
-Everything below waits on that.
+**No blockers.** The whole case plays end to end on the production build against the live server (rehearsed
+Oct 31, night; see below).
+
+## Rehearsal (Oct 31, night)
+
+Full run on `npm run build` + `vite preview` + the live server: cold open, courtyard, three interviews, the
+wrong guess, the docked Observatory, waveform, drop test with the 4 s prediction, slip or push, notebook (a wrong
+step got Footnote's nudge), drag-to-present, strikethrough, restore, exit check. It plays. What it found:
+
+- **Fixed (Santosh):** the game never asked for seed 1000, so the server picked one of six passing seeds at
+  random: 5 times in 6 the stage would have had a different culprit and an uncached path. `?judges` now pins the
+  first Midnight Fall to seed 1000 (replays still vary), and `?seed=N` pins any case. On seed 1000 the stage
+  path replies in under 10 ms from the cache.
+- **Stage rule:** tap nothing before beat 3. One stray chip ("The cry?") changes Varnish's memory, and the
+  stage line then runs live (about 4 s, a different reply). If anyone touches the game before going on, reload.
+
+Kushal, small fixes in your scenes, in order:
+1. **LabFall drop test:** Footnote's "Four times higher. Only twice as long!" box covers the big stopwatch at
+   the exact moment it shows 2.00 s (the room-prediction punchline), and the box then eats the first click on the
+   next balcony. Hide it before the next `pickBalcony`, or show it lower down.
+2. **LabFall slip or push:** "push lands 4.8 m out" while the outline is at 4.5 m, because `t` comes from frame
+   timing. Use `Math.sqrt(2 * b.h / 9.8)` for the label so it reads 4.5.
+3. **CrossExam:** the "Lady Varnish" and "Pendle" tabs touch; add a gap.
+4. Optional: the docked Observatory doesn't scroll to new events (fine on the stage path, Varnish is first).
 
 ## Latest (Oct 31, late)
 
@@ -40,7 +62,7 @@ Santosh's list:
 3. ~~Art.~~ Done, in `game/public/assets/case10/`.
 4. ~~The thinking loop and stress, for the Observatory.~~ Done: live on `/trace`.
 5. ~~Warm cache for the stage questions (`server/warm.py`) and a `demo_lab` safety net.~~ Done.
-6. Full rehearsal on the real server once `LabFall` lands.
+6. ~~Full rehearsal on the real server once `LabFall` lands.~~ Done Oct 31, night; seed pin fixed.
 
 ## Milestones (hours from now)
 

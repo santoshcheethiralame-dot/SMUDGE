@@ -64,3 +64,20 @@ def test_demo_lab_needs_the_demo_flag(monkeypatch):
     monkeypatch.setenv("SMUDGE_DEMO", "1")
     out = client.post(f"/api/case/{cid}/demo_lab").json()
     assert out["ok"] and out["evidence"] == "resistor:ohmar" and out["card"]["badge"]
+
+
+def test_filler_gets_a_bark_without_a_model_call(monkeypatch):
+    def boom(*a, **k):
+        raise AssertionError("filler must not reach the model")
+    monkeypatch.setattr(agents, "chat", boom)
+    monkeypatch.setattr(agents, "chat_json", boom)
+    cid = _new()
+    for q in ["Pssssst!", "no no no no", "...", "hmmm", "ha ha ha"]:
+        r = client.post("/api/ask", json={"case_id": cid, "suspect": "volta", "question": q}).json()
+        assert r["source"] == "bark" and r["answer"], q
+
+
+def test_real_short_questions_are_not_filler():
+    assert not agents.is_filler("who?")
+    assert not agents.is_filler("Where were you?")
+    assert not agents.is_filler("no, tell me")

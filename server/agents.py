@@ -66,6 +66,20 @@ def numbers_for(units: str):
     return re.compile(rf"\b\d+(\.\d+)?\s*({units})\b", re.I)
 
 
+INTERJECTIONS = {"pst", "hm", "uh", "um", "ah", "oi", "ey", "ahem", "sh", "shh", "psst"}
+BARKS = ("Hm? Speak up, detective.", "Was that a question?", "I didn't catch that. Try words.")
+
+
+def is_filler(question: str) -> bool:
+    """No words to answer: only symbols, a lone noise like "Pssssst!" or "hmm", or one word said over and over
+    ("no no no no"). A single real word such as "who?" is still a question."""
+    words = re.findall(r"[a-z]+", question.lower())
+    if not words:
+        return True
+    squashed = [re.sub(r"(.)\1+", r"\1", w) for w in words]      # "pssssst" -> "pst", "hmmm" -> "hm"
+    return len(set(squashed)) == 1 and (len(words) > 1 or squashed[0] in INTERJECTIONS)
+
+
 class SuspectAgent:
     def __init__(self, case: Case, sid: str, trace: Trace | None = None, stress: Stress | None = None):
         self.case, self.sid = case, sid
@@ -143,6 +157,10 @@ class SuspectAgent:
 
     def ask(self, question: str, patience: float = 0.0):
         q = question[:240]
+        if is_filler(q):        # nothing to answer: a short in-character bark, no model call, nothing for the ledger
+            text = self.tic(BARKS[len(self.ledger) % len(BARKS)])
+            self._emit("reply", "ok", question=q, text=text, filler=True)
+            return {"answer": text, "source": "bark"}
         plan = None
         if thinking():
             plan = self._plan(q, patience)

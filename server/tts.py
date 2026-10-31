@@ -24,6 +24,17 @@ class TtsError(Exception):
         self.status, self.why = status, why
 
 
+_shared: httpx.Client | None = None
+
+
+def _http() -> httpx.Client:
+    """One client for every line, so Sarvam's connection (and its TLS handshake) is reused instead of rebuilt per line."""
+    global _shared
+    if _shared is None:
+        _shared = httpx.Client(timeout=TIMEOUT)
+    return _shared
+
+
 def pronounce(text: str) -> str:
     """Spell noises the way a voice can say them: "Hrrrm." would be read letter by letter or skipped.
     Only what is sent to Sarvam changes; the text on screen stays as written."""
@@ -53,10 +64,10 @@ def synthesize(who: str, text: str, client: httpx.Client | None = None) -> bytes
         _cache.move_to_end(ck)
         return _cache[ck]
     try:
-        c = client or httpx.Client(timeout=TIMEOUT)
+        c = client or _http()
         r = c.post(URL, headers={"api-subscription-key": key}, json={
             "text": pronounce(text), "language_code": "en-IN", "model": MODEL, "speaker": ck[0],
-            "output_audio_codec": "mp3", "speech_sample_rate": 24000})
+            "output_audio_codec": "mp3", "speech_sample_rate": 16000})
     except httpx.HTTPError as e:
         raise TtsError(502, f"sarvam unreachable: {type(e).__name__}")
     if r.status_code != 200:

@@ -15,6 +15,16 @@ class SttError(Exception):
         self.status, self.why = status, why
 
 
+_shared: httpx.Client | None = None
+
+
+def _http() -> httpx.Client:
+    global _shared
+    if _shared is None:
+        _shared = httpx.Client(timeout=TIMEOUT)
+    return _shared
+
+
 def available() -> bool:
     return bool(os.environ.get("SARVAM_API_KEY"))
 
@@ -29,7 +39,7 @@ def transcribe(audio: bytes, content_type: str = "audio/webm", client: httpx.Cli
         raise SttError(413, "audio too large")
     ext = "ogg" if "ogg" in content_type else "mp4" if "mp4" in content_type else "webm"
     try:
-        c = client or httpx.Client(timeout=TIMEOUT)
+        c = client or _http()
         r = c.post(
             URL,
             headers={"api-subscription-key": key},

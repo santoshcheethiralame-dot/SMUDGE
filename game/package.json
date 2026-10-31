@@ -1,0 +1,19 @@
+{
+  "name": "smudge-game",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --strictPort",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 8872"
+  },
+  "dependencies": {
+    "phaser": "3.90.0",
+    "tone": "15.0.4"
+  },
+  "devDependencies": {
+    "typescript": "5.6.3",
+    "vite": "5.4.11"
+  }
+}

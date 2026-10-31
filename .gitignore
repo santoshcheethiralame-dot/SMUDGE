@@ -1,0 +1,13 @@
+.env
+node_modules/
+dist/
+__pycache__/
+art/*/out/dev/
+server/.cache/
+# build outputs: regenerable from art/*/build.py; the shipped copies live in game/public/assets
+art/*/out/
+# run logs, except the gate runs we cite in the pitch
+server/*.log
+!server/gate*.log
+.pytest_cache/
+server/gate_*.log

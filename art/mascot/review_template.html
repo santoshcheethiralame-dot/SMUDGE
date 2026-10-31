@@ -1,0 +1,315 @@
+<title>Smudge Sprite Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Karla:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a workbench page. Turntable hero, then the main viewer with controls, the 8-way strip, every animation as a card grid, then portraits. */
+:root{
+  --bg:#EFE8D6; --paper:#F7F1E1; --surface:#FFFDF7; --ink:#0E1938; --fg:#18202E; --muted:#5E6577;
+  --line:#D9CFB6; --red:#C9302A; --red-soft:#F6DDD8; --tan:#C79A5C; --focus:#2F4E8E;
+  --f-display:"Lilita One","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Karla","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E131F; --paper:#141B2B; --surface:#182033; --ink:#C9D6EE; --fg:#E4E8F1; --muted:#98A1B5;
+  --line:#2A3449; --red:#EE5A4C; --red-soft:#3A1E1E; --tan:#E6C189; --focus:#86BDE6; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E131F; --paper:#141B2B; --surface:#182033; --ink:#C9D6EE; --fg:#E4E8F1; --muted:#98A1B5;
+  --line:#2A3449; --red:#EE5A4C; --red-soft:#3A1E1E; --tan:#E6C189; --focus:#86BDE6; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-block:28px 72px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:36px}
+h1,h2{font-family:var(--f-display);font-weight:400;margin:0;line-height:1.1;text-wrap:balance;color:var(--ink)}
+h1{font-size:clamp(2.2rem,5vw,3.4rem)}
+h2{font-size:1.6rem}
+p{margin:0;max-width:72ch}
+.muted{color:var(--muted)}
+.mono{font-family:var(--f-mono);font-size:.82rem}
+.stats{display:flex;flex-wrap:wrap;gap:8px}
+.stats span{font-family:var(--f-mono);font-size:.78rem;padding:4px 10px;border-radius:99px;background:var(--surface);border:1px solid var(--line)}
+.hero{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:24px;align-items:center}
+@media (max-width:760px){.hero{grid-template-columns:1fr}}
+canvas{image-rendering:pixelated;image-rendering:crisp-edges;display:block;max-width:100%}
+.stage{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;justify-content:center;align-items:center;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.viewer{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,320px);gap:18px}
+@media (max-width:900px){.viewer{grid-template-columns:1fr}}
+label{font-weight:700;font-size:.85rem;display:flex;flex-direction:column;gap:6px}
+select,input[type=range]{width:100%}
+select{font:inherit;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--fg)}
+.compass{display:grid;grid-template-columns:repeat(3,48px);gap:6px;justify-content:start}
+.compass button,.seg button,.btn{font:inherit;font-weight:700;font-size:.82rem;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--fg);cursor:pointer}
+.compass button[aria-pressed="true"],.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.compass .c{background:transparent;border-style:dashed;color:var(--muted)}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{padding:0 12px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{padding:0 14px}
+.btn.primary{background:var(--red);border-color:var(--red);color:#fff}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.strip{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px}
+@media (max-width:760px){.strip{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.strip figure{margin:0;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:6px;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.strip figcaption{font-family:var(--f-mono);font-size:.72rem;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;align-items:center;cursor:pointer;min-width:0;font:inherit;color:inherit}
+.card[aria-pressed="true"]{border-color:var(--red);box-shadow:0 0 0 2px var(--red-soft)}
+.card .nm{font-weight:700;font-size:.85rem;word-break:break-word;text-align:center}
+.card .meta{font-family:var(--f-mono);font-size:.7rem;color:var(--muted)}
+.group-h{font-family:var(--f-mono);font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:6px}
+.portraits{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:18px}
+@media (max-width:760px){.portraits{grid-template-columns:1fr}}
+.pgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+pre{margin:0;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px;overflow-x:auto;font-family:var(--f-mono);font-size:.78rem;line-height:1.5}
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:12px">
+    <span class="mono muted">Smudge · mascot · v1</span>
+    <h1>Smudge Sprite Lab</h1>
+    <p class="muted">Every animation of the ink-blot detective, rendered from one 3D model into 64 px pixel art from eight directions. Pick an animation, turn the compass, change the floor, and watch it loop exactly as the game will play it.</p>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <section class="hero">
+    <div class="stage" style="padding:18px"><canvas id="turn" width="64" height="64" style="width:256px;height:256px" aria-label="Smudge turning through all eight directions"></canvas></div>
+    <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+      <h2>Turnaround</h2>
+      <p class="muted">Lights are fixed to the camera, so every facing gets the same warm key light from the upper left, a cool rim on the right, and cel-banded shading. West is rendered, not mirrored, so the red pen stays in the same pocket.</p>
+      <div class="stage"><canvas id="turnStrip" width="512" height="64" style="width:100%;max-width:768px"></canvas></div>
+    </div>
+  </section>
+
+  <section class="viewer">
+    <div class="stage" style="min-height:420px"><canvas id="main" width="64" height="64" aria-label="Selected animation"></canvas></div>
+    <div class="panel">
+      <label for="anim">Animation<select id="anim"></select></label>
+      <div><div style="font-weight:700;font-size:.85rem;margin-bottom:6px">Facing</div><div class="compass" id="compass"></div></div>
+      <label for="speed">Speed <span class="mono" id="speedOut">1.0×</span><input type="range" id="speed" min="0.25" max="2" step="0.25" value="1"></label>
+      <label for="zoom">Zoom <span class="mono" id="zoomOut">5×</span><input type="range" id="zoom" min="1" max="7" step="1" value="5"></label>
+      <div><div style="font-weight:700;font-size:.85rem;margin-bottom:6px">Floor</div><div class="seg" id="floor"></div></div>
+      <div class="row"><button class="btn primary" id="play" type="button">Pause</button><button class="btn" id="step" type="button">Step frame</button></div>
+      <p class="mono muted" id="info"></p>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:12px">
+    <h2>All eight directions</h2>
+    <div class="strip" id="strip"></div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:12px">
+    <h2>Every animation</h2>
+    <p class="muted">Shown facing the direction picked in the compass. Click a card to load it into the viewer.</p>
+    <div id="cards" style="display:flex;flex-direction:column;gap:8px"></div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:12px">
+    <h2>Dialogue portraits</h2>
+    <div class="portraits">
+      <div class="panel" style="align-items:center">
+        <div class="stage" style="width:100%"><canvas id="pmain" width="96" height="96" style="width:288px;height:288px" aria-label="Selected portrait"></canvas></div>
+        <div class="row"><button class="btn primary" id="talk" type="button">Talking</button><button class="btn" id="blinkBtn" type="button">Blink</button></div>
+      </div>
+      <div class="pgrid" id="pgrid"></div>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:12px">
+    <h2>Loading it in Phaser</h2>
+    <pre>this.load.multiatlas('smudge', 'smudge_atlas.json', 'assets/');
+this.load.json('smudge_anims', 'smudge_anims.json');
+// create()
+this.anims.fromJSON(this.cache.json.get('smudge_anims'));
+const smudge = this.add.sprite(160, 120, 'smudge').setScale(4);
+smudge.play('walk_E');   // key = &lt;animation&gt;_&lt;S|SE|E|NE|N|NW|W|SW&gt;</pre>
+    <p class="muted">Use <span class="mono">pixelArt: true</span> in the game config and integer scales only. The sprite's feet sit on row 60 of each 64 px cell; set the origin to <span class="mono">(0.5, 0.94)</span> to stand it on a floor line. Jump height is left to the engine.</p>
+  </section>
+</div>
+
+<script>
+const DATA = /*DATA*/null;
+const CELL = 64, P = 96;
+const DIRS = DATA.dirs;
+const state = { anim: "walk", dir: "E", speed: 1, zoom: 5, floor: "paper", playing: true, frame: 0 };
+const imgs = {};
+const byName = {};
+DATA.anims.forEach(a => { byName[a.name] = a; const im = new Image(); im.src = a.src; imgs[a.name] = im; });
+const pImg = new Image(); pImg.src = DATA.portraits;
+
+function load(k, d) { try { const v = localStorage.getItem("smudge_" + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } }
+function save(k, v) { try { localStorage.setItem("smudge_" + k, JSON.stringify(v)); } catch (e) {} }
+Object.assign(state, { anim: load("anim", state.anim), dir: load("dir", state.dir), floor: load("floor", state.floor) });
+if (!byName[state.anim]) state.anim = "walk";
+
+const totalFrames = DATA.anims.reduce((s, a) => s + a.frames, 0) * DIRS.length;
+document.getElementById("stats").innerHTML = [
+  `${DATA.anims.length} animations`, `${DIRS.length} directions`, `${totalFrames.toLocaleString()} frames`,
+  `64 px cells`, `${DATA.expr.length * DATA.pframes.length} portraits`].map(s => `<span>${s}</span>`).join("");
+
+function floorPaint(ctx, w, h, floor, scale) {
+  if (floor === "paper") {
+    ctx.fillStyle = "#ECE4CE"; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = "#B9D2EE";
+    for (let y = 6 * scale; y < h; y += 8 * scale) ctx.fillRect(0, y, w, Math.max(1, Math.floor(scale / 2)));
+    ctx.fillStyle = "#E7A3A0"; ctx.fillRect(Math.floor(w * 0.12), 0, Math.max(1, Math.floor(scale / 2)), h);
+  } else if (floor === "night") {
+    ctx.fillStyle = "#1B2440"; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = "#3E2614"; ctx.fillRect(0, Math.floor(h * 0.83), w, h);
+  } else if (floor === "checker") {
+    const s = 8 * scale;
+    for (let y = 0; y < h; y += s) for (let x = 0; x < w; x += s) {
+      ctx.fillStyle = ((x + y) / s) % 2 ? "#BDBDBD" : "#E2E2E2"; ctx.fillRect(x, y, s, s);
+    }
+  } else {
+    ctx.fillStyle = "#7FB069"; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = "#6A9A57"; ctx.fillRect(0, Math.floor(h * 0.83), w, h);
+  }
+}
+
+function drawFrame(ctx, name, dir, f, scale, floor, ox = 0, oy = 0) {
+  const a = byName[name]; const im = imgs[name];
+  if (!im.complete) return;
+  const r = DIRS.indexOf(dir);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(im, f * CELL, r * CELL, CELL, CELL, ox, oy, CELL * scale, CELL * scale);
+}
+
+// ---------- controls ----------
+const animSel = document.getElementById("anim");
+const groups = {};
+DATA.anims.forEach(a => (groups[a.group] = groups[a.group] || []).push(a));
+for (const [g, list] of Object.entries(groups)) {
+  const og = document.createElement("optgroup"); og.label = g;
+  list.forEach(a => { const o = document.createElement("option"); o.value = a.name; o.textContent = a.name.replace(/_/g, " "); og.appendChild(o); });
+  animSel.appendChild(og);
+}
+animSel.value = state.anim;
+animSel.addEventListener("change", () => select(animSel.value));
+
+const compass = document.getElementById("compass");
+["NW", "N", "NE", "W", "", "E", "SW", "S", "SE"].forEach(d => {
+  const b = document.createElement("button"); b.type = "button";
+  if (!d) { b.className = "c"; b.textContent = "turn"; b.setAttribute("aria-label", "Rotate one step clockwise");
+    b.onclick = () => setDir(DIRS[(DIRS.indexOf(state.dir) + 1) % 8]); }
+  else { b.textContent = d; b.dataset.dir = d; b.onclick = () => setDir(d); }
+  compass.appendChild(b);
+});
+function setDir(d) { state.dir = d; save("dir", d); syncCompass(); }
+function syncCompass() { compass.querySelectorAll("button[data-dir]").forEach(b => b.setAttribute("aria-pressed", b.dataset.dir === state.dir)); buildCards(); }
+
+const floorEl = document.getElementById("floor");
+[["paper", "Paper"], ["night", "Night desk"], ["checker", "Checker"], ["grass", "Grass"]].forEach(([k, l]) => {
+  const b = document.createElement("button"); b.type = "button"; b.textContent = l; b.dataset.k = k;
+  b.onclick = () => { state.floor = k; save("floor", k); floorEl.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x.dataset.k === k)); };
+  floorEl.appendChild(b);
+});
+floorEl.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x.dataset.k === state.floor));
+
+const speed = document.getElementById("speed"), zoom = document.getElementById("zoom");
+speed.oninput = () => { state.speed = +speed.value; document.getElementById("speedOut").textContent = state.speed.toFixed(2).replace(/0$/, "") + "×"; };
+zoom.oninput = () => { state.zoom = +zoom.value; document.getElementById("zoomOut").textContent = state.zoom + "×"; sizeMain(); };
+const playBtn = document.getElementById("play");
+playBtn.onclick = () => { state.playing = !state.playing; playBtn.textContent = state.playing ? "Pause" : "Play"; };
+document.getElementById("step").onclick = () => { state.playing = false; playBtn.textContent = "Play"; state.frame = (state.frame + 1) % byName[state.anim].frames; state.pos = state.frame; };
+
+function select(name) {
+  state.anim = name; state.frame = 0; state.pos = 0; save("anim", name); animSel.value = name;
+  const a = byName[name];
+  document.getElementById("info").textContent = `${a.frames} frames · ${a.fps} fps · ${a.loop ? "loops" : "plays once"} · key ${name}_${state.dir}`;
+  document.querySelectorAll(".card").forEach(c => c.setAttribute("aria-pressed", c.dataset.name === name));
+}
+
+const main = document.getElementById("main");
+function sizeMain() { main.width = CELL * state.zoom; main.height = CELL * state.zoom; }
+sizeMain();
+
+// ---------- 8-way strip ----------
+const strip = document.getElementById("strip");
+const stripCtx = DIRS.map(d => {
+  const f = document.createElement("figure");
+  const c = document.createElement("canvas"); c.width = CELL * 2; c.height = CELL * 2; c.style.width = "100%";
+  const cap = document.createElement("figcaption"); cap.textContent = d;
+  f.append(c, cap); strip.appendChild(f); return c.getContext("2d");
+});
+
+// ---------- cards ----------
+let cardCtx = [];
+function buildCards() {
+  const host = document.getElementById("cards"); host.innerHTML = ""; cardCtx = [];
+  for (const [g, list] of Object.entries(groups)) {
+    const h = document.createElement("div"); h.className = "group-h"; h.textContent = g; host.appendChild(h);
+    const grid = document.createElement("div"); grid.className = "grid"; host.appendChild(grid);
+    list.forEach(a => {
+      const b = document.createElement("button"); b.type = "button"; b.className = "card"; b.dataset.name = a.name;
+      b.setAttribute("aria-pressed", a.name === state.anim);
+      const c = document.createElement("canvas"); c.width = CELL * 2; c.height = CELL * 2; c.style.width = "128px";
+      const nm = document.createElement("div"); nm.className = "nm"; nm.textContent = a.name.replace(/_/g, " ");
+      const meta = document.createElement("div"); meta.className = "meta"; meta.textContent = `${a.frames}f · ${a.fps}fps`;
+      b.append(c, nm, meta); b.onclick = () => { select(a.name); main.scrollIntoView({ behavior: "smooth", block: "center" }); };
+      grid.appendChild(b); cardCtx.push([a, c.getContext("2d")]);
+    });
+  }
+}
+
+// ---------- portraits ----------
+let pExpr = 0, talking = true, blinkUntil = 0;
+const pmain = document.getElementById("pmain").getContext("2d");
+const pgrid = document.getElementById("pgrid");
+const pCtx = DATA.expr.map((e, i) => {
+  const b = document.createElement("button"); b.type = "button"; b.className = "card"; b.setAttribute("aria-pressed", i === 0);
+  const c = document.createElement("canvas"); c.width = P; c.height = P; c.style.width = "100%"; c.style.maxWidth = "144px";
+  const nm = document.createElement("div"); nm.className = "nm"; nm.textContent = e;
+  b.append(c, nm); b.onclick = () => { pExpr = i; pgrid.querySelectorAll(".card").forEach((x, j) => x.setAttribute("aria-pressed", j === i)); };
+  pgrid.appendChild(b); return c.getContext("2d");
+});
+const talkBtn = document.getElementById("talk");
+talkBtn.onclick = () => { talking = !talking; talkBtn.textContent = talking ? "Talking" : "Quiet"; };
+document.getElementById("blinkBtn").onclick = () => { blinkUntil = performance.now() + 160; };
+
+function drawPortrait(ctx, row, col, scale) {
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = "#ECE4CE"; ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  if (pImg.complete) ctx.drawImage(pImg, col * P, row * P, P, P, 0, 0, P * scale, P * scale);
+}
+
+// ---------- loop ----------
+let last = performance.now(), acc = 0, tick = 0;
+function loop(now) {
+  const dt = (now - last) / 1000; last = now;
+  const a = byName[state.anim];
+  if (state.playing) {
+    acc += dt * a.fps * state.speed;
+    const span = a.loop ? a.frames : a.frames + Math.round(a.fps * 0.8);
+    while (acc >= 1) { acc -= 1; state.pos = ((state.pos || 0) + 1) % span; }
+    state.frame = Math.min(state.pos || 0, a.frames - 1);
+  }
+  tick += dt;
+  // main
+  const mc = main.getContext("2d");
+  floorPaint(mc, main.width, main.height, state.floor, state.zoom);
+  drawFrame(mc, state.anim, state.dir, state.frame, state.zoom, state.floor);
+  // strip
+  stripCtx.forEach((ctx, i) => { floorPaint(ctx, CELL * 2, CELL * 2, state.floor, 2); drawFrame(ctx, state.anim, DIRS[i], state.frame, 2); });
+  // cards (own clocks)
+  cardCtx.forEach(([c, ctx]) => {
+    const f = Math.floor(tick * c.fps) % (c.loop ? c.frames : c.frames + Math.round(c.fps * 0.8));
+    floorPaint(ctx, CELL * 2, CELL * 2, state.floor, 2); drawFrame(ctx, c.name, state.dir, Math.min(f, c.frames - 1), 2);
+  });
+  // turntable
+  const tc = document.getElementById("turn").getContext("2d");
+  const ti = Math.floor(tick / 0.55) % 8;
+  floorPaint(tc, 64, 64, "paper", 1); drawFrame(tc, "idle", DIRS[ti], Math.floor(tick * 6) % 8, 1);
+  const ts = document.getElementById("turnStrip").getContext("2d");
+  floorPaint(ts, 512, 64, "paper", 1); DIRS.forEach((d, i) => drawFrame(ts, "idle", d, Math.floor(tick * 6) % 8, 1, null, i * 64, 0));
+  // portraits
+  const blink = now < blinkUntil || (Math.floor(tick * 10) % 37 === 0);
+  const col = blink ? 1 : talking ? 2 + (Math.floor(tick * 8) % 3) : 0;
+  drawPortrait(pmain, pExpr, col, 3);
+  pCtx.forEach((ctx, i) => drawPortrait(ctx, i, 0, 1));
+  requestAnimationFrame(loop);
+}
+syncCompass(); select(state.anim);
+requestAnimationFrame(loop);
+</script>

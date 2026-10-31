@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "game",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "game", "run", "dev"],
+      "port": 8872
+    },
+    {
+      "name": "server",
+      "runtimeExecutable": "C:\\Users\\carbo\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe",
+      "runtimeArgs": ["-m", "uvicorn", "api:app", "--port", "8873", "--app-dir", "server"],
+      "port": 8873
+    },
+    {
+      "name": "mascot-smoke",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8871", "--directory", "art/mascot"],
+      "port": 8871
+    }
+  ]
+}

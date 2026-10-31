@@ -1,0 +1,50 @@
+{
+ "anims": [
+  {
+   "name": "foot_idle",
+   "frames": 8,
+   "fps": 6,
+   "loop": true
+  },
+  {
+   "name": "foot_talk",
+   "frames": 8,
+   "fps": 10,
+   "loop": true
+  },
+  {
+   "name": "foot_pop",
+   "frames": 8,
+   "fps": 12,
+   "loop": false
+  },
+  {
+   "name": "foot_worried",
+   "frames": 8,
+   "fps": 10,
+   "loop": true
+  },
+  {
+   "name": "foot_spin",
+   "frames": 8,
+   "fps": 14,
+   "loop": false
+  }
+ ],
+ "dirs": [
+  "S",
+  "SE",
+  "E",
+  "NE",
+  "N",
+  "NW",
+  "W",
+  "SW"
+ ],
+ "portraits": [
+  "neutral",
+  "happy",
+  "worried",
+  "surprised"
+ ]
+}

@@ -154,7 +154,7 @@ crown = ${result.density} g/cm³
   private notebook(): Promise<{ density: number; metal: string }> {
     return new Promise((resolve) => {
       const wrap = document.createElement("form");
-      wrap.style.cssText = `font-family:"Smudge Digits","Pixelify Sans",monospace;background:#F2E9CF;border:2px solid #0E1938;border-radius:4px;
+      wrap.style.cssText = `font-family:"Smudge Digits","DotGothic16",monospace;background:#F2E9CF;border:2px solid #0E1938;border-radius:4px;
         padding:8px 10px;box-sizing:border-box;display:flex;flex-direction:column;gap:5px;color:#0E1938;
         background-image:repeating-linear-gradient(#F2E9CF 0 15px,#9cb8dc 15px 16px);`;
       const field = (id: string, label: string, unit: string) =>

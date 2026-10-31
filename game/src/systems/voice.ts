@@ -94,7 +94,7 @@ export function installVoiceToggle() {
   const b = document.createElement("button");
   b.type = "button";
   b.style.cssText = `position:fixed;top:max(10px,env(safe-area-inset-top,0px));left:max(10px,env(safe-area-inset-left,0px));z-index:49;
-    font:600 12px/1 "Pixelify Sans",monospace;padding:6px 9px;border-radius:3px;border:2px solid #0E1938;background:#F2E9CF;color:#0E1938;cursor:pointer`;
+    font:600 12px/1 "DotGothic16",monospace;padding:6px 9px;border-radius:3px;border:2px solid #0E1938;background:#F2E9CF;color:#0E1938;cursor:pointer`;
   const show = () => { b.textContent = LABEL[voiceMode()]; };
   b.onclick = () => { setVoiceMode(NEXT[voiceMode()]); if (voiceMode() === "off") hush(); show(); };
   show();

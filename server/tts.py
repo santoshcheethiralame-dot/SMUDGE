@@ -2,6 +2,7 @@
 Any failure raises TtsError; the browser then speaks the line with its own voice instead."""
 import base64
 import os
+import re
 from collections import OrderedDict
 
 import httpx
@@ -21,6 +22,13 @@ class TtsError(Exception):
     def __init__(self, status: int, why: str):
         super().__init__(why)
         self.status, self.why = status, why
+
+
+def pronounce(text: str) -> str:
+    """Spell noises the way a voice can say them: "Hrrrm." would be read letter by letter or skipped.
+    Only what is sent to Sarvam changes; the text on screen stays as written."""
+    text = re.sub(r"\bhr+m+\b", lambda m: "Hmm" if m.group()[0] == "H" else "hmm", text, flags=re.I)
+    return re.sub(r"\bp+s+t+\b", lambda m: "Psst" if m.group()[0] == "P" else "psst", text, flags=re.I)
 
 
 def speaker_for(who: str) -> str:
@@ -47,7 +55,7 @@ def synthesize(who: str, text: str, client: httpx.Client | None = None) -> bytes
     try:
         c = client or httpx.Client(timeout=TIMEOUT)
         r = c.post(URL, headers={"api-subscription-key": key}, json={
-            "text": text, "language_code": "en-IN", "model": MODEL, "speaker": ck[0],
+            "text": pronounce(text), "language_code": "en-IN", "model": MODEL, "speaker": ck[0],
             "output_audio_codec": "mp3", "speech_sample_rate": 24000})
     except httpx.HTTPError as e:
         raise TtsError(502, f"sarvam unreachable: {type(e).__name__}")

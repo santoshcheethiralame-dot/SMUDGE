@@ -63,3 +63,9 @@ def test_sarvam_failures_are_502():
         tts.synthesize("v", "hi", _mock(boom))
     with pytest.raises(tts.TtsError):
         tts.synthesize("v", "hi", _mock(lambda r: httpx.Response(200, json={})))
+
+
+def test_noises_are_spelled_speakably():
+    assert tts.pronounce("Hrrrrm. I was polishing my helmet.") == "Hmm. I was polishing my helmet."
+    assert tts.pronounce("Pssssst! Over here.") == "Psst! Over here."
+    assert tts.pronounce("Where were you?") == "Where were you?"

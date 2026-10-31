@@ -77,7 +77,9 @@ def is_filler(question: str) -> bool:
     if not words:
         return True
     squashed = [re.sub(r"(.)\1+", r"\1", w) for w in words]      # "pssssst" -> "pst", "hmmm" -> "hm"
-    return len(set(squashed)) == 1 and (len(words) > 1 or squashed[0] in INTERJECTIONS)
+    # one word said over and over, or a lone noise: a known interjection, or a short word with no vowel ("hrm", "grr")
+    noise = squashed[0] in INTERJECTIONS or (len(squashed[0]) <= 5 and not re.search(r"[aeiouy]", squashed[0]))
+    return len(set(squashed)) == 1 and (len(words) > 1 or noise)
 
 
 class SuspectAgent:

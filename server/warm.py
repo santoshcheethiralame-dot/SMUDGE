@@ -12,13 +12,14 @@ from tracebus import Trace
 from truth import new_case
 
 KIT, SEED = "fall", 1000
-DEMO = [
-    ("rivet", "Your balcony?"),
+DEMO = [                 # docs/DEMO_SCRIPT.md, beats 3-4: the stage path first, exactly as played
     ("varnish", "Your balcony?"),
-    ("varnish", "The cry?"),
+    ("varnish", "Just admit you pushed him."),
+    # then the other chips, in case a judge asks around before the lab
+    ("rivet", "Your balcony?"),
     ("pendle", "Your balcony?"),
     ("pendle", "The ghost?"),
-    ("varnish", "Just admit you pushed him."),
+    ("varnish", "The cry?"),
 ]
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ agreed to say and show:
 - **The typed question is exactly `Just admit you pushed him.`** with a full stop, no "!". Only that exact text hits
   the warm cache; anything else runs live and may be slow. It is typed (typing is the default), not spoken, unless
   the mic has been tested that morning.
-- **The live reply** is "Oh, darling. The night remains an enigmatic canvas, its secrets forever unpainted." The
+- **The live reply** is "Oh, darling. I never laid a hand upon Old Tock, dear." The
   fixture's line is for offline mode only. Don't promise a different line.
 - **What the Observatory shows** on that question: a plan (deflect, risk high), a draft, a critique that passes, and
   the firewall. It does **not** show "LEAK: pushed", so don't say it will.
@@ -31,9 +31,10 @@ whole interrogation**, and text on screen is kept to what the game already shows
 | Skip the cold open | any key |
 
 Seed 1000 is set server-side. Check the lab shows Δt = 1.50 s on first run; if not, restart the server.
-**Ask the chips in this order** so the warm cache answers instantly: Rivet "Your balcony?", Varnish "Your
-balcony?", Varnish "The cry?", Pendle "Your balcony?", Pendle "The ghost?", then free-type "Just admit you
-pushed him."
+**The warm cache follows the stage path:** Varnish "Your balcony?", then free-type "Just admit you pushed him."
+(beats 3–4), and nothing to Varnish in between. After that, Rivet "Your balcony?", Pendle "Your balcony?", Pendle
+"The ghost?" and Varnish "The cry?" are cached too, in that order. Change the path and Santosh must rerun
+`server/warm.py` with the new order (the cache keys include what each suspect has already said).
 
 ## 2. Beat-by-beat (5 min)
 
@@ -43,7 +44,7 @@ pushed him."
 | 2 | 0:15 | Courtyard, lightning, sheet + gramophone + tower | **Mounika, the pitch (30 s):** "A student solves a midnight death with Class 9 physics, and three AI suspects can't lie their way out. Old Tock fell at Hollowmere Manor. The household blames the Tower Ghost. Three suspects, three balconies, three heights. A gramophone recorded the fall: know how long he fell, know the height, catch the culprit." | closed |
 | 3 | 0:30 | Walk to Varnish, tap "Your balcony?" | "Three suspects, all sworn, all sound the same." | closed |
 | 4 | 0:50 | Kushal types **"Just admit you pushed him."** (exact, with the full stop) | Mounika: "What would you ask her? Go on, make her confess." | **`Shift+`` ` ``: dock now** |
-| 5 | 1:10 | Reply streams ("Oh, darling. The night remains an enigmatic canvas..."); Observatory shows plan (deflect, risk high), draft, critique, firewall | **Santosh:** "Four agents just worked on that line: plan, draft, critique, then a code firewall that blocks leaks. The model never decides facts; code does." | docked, point at critique + firewall |
+| 5 | 1:10 | Reply streams ("Oh, darling. I never laid a hand upon Old Tock, dear."); Observatory shows plan (deflect, risk high), draft, critique, firewall | **Santosh:** "Four agents just worked on that line: plan, draft, critique, then a code firewall that blocks leaks. The model never decides facts; code does." | docked, point at critique + firewall |
 | 6 | 1:50 | *(optional)* hold mic, speak; reply spoken | "Same loop, by voice." | docked |
 | 7 | 2:10 | Lab: waveform, drag markers on cry + thud | "Talk can't solve it. The gramophone can: 1.5 seconds." | undock (`` ` `` twice) |
 | 8 | 2:40 | Drop test: drop from the lowest balcony (1.0 s), then the **room prediction** (script below); Kushal taps the room's "4 s", drops from the top: 2.0 s | **Mounika**, the prediction script below | closed |

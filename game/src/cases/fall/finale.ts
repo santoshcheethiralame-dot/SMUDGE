@@ -1,22 +1,25 @@
 // The Midnight Fall's ending, run by the Restore scene: the "ghost" on the tower blows off (it was the
 // bedsheet), then a two-tap exit check. Answers go to localStorage["smudge.exit"] for the playtest numbers.
 import Phaser from "phaser";
-import { W, H, FONT, DISPLAY } from "../../consts";
+import { W, H, FONT, DISPLAY, project } from "../../consts";
+import { FALL, World3 } from "./layout";
 import { wait, tween } from "../../systems/fx";
 import { sfx } from "../../audio";
 
-/** The ghost over the tower loses its eyes in a gust and flaps away: a bedsheet. Then the line. */
+/** The ghost on the washing line loses its eyes in a gust and flaps away: a bedsheet. Then the line. */
 export async function ghostReveal(scene: Phaser.Scene) {
-  const ghost = scene.add.container(438, 46).setDepth(40);
-  const sheet = scene.add.polygon(0, 0, [-14, -16, 14, -16, 18, 14, 10, 10, 4, 16, -4, 10, -10, 16, -18, 12], 0xf4f4fa).setStrokeStyle(1, 0x9aa6c8);
-  const eyes = [scene.add.circle(-5, -6, 2, 0x0e1938), scene.add.circle(5, -6, 2, 0x0e1938)];
-  ghost.add([sheet, ...eyes]);
-  ghost.setAlpha(0);
+  // sheet_ghost.png is two 32 px frames: 0 the face, 1 the plain sheet. Added as an image, so cut the frames here.
+  const tex = scene.textures.get("sheet_ghost");
+  if (!tex.has("0")) { tex.add("0", 0, 0, 0, 32, 32); tex.add("1", 0, 32, 0, 32, 32); }
+  // the Restore backdrop is shifted left by 180 px against the 720 px art; the ghost hangs where the art put it
+  const g = FALL.district.clues.ghost as World3;
+  const at = project(g[0], g[1], g[2], FALL.district.cu, FALL.district.cv);
+  const ghost = scene.add.image(at.x + (FALL.district.width - W) / 2 - 180, at.y - 6, "sheet_ghost", "0").setDepth(40).setAlpha(0);
   await tween(scene, { targets: ghost, alpha: 1, duration: 500 });
-  scene.tweens.add({ targets: ghost, y: 40, duration: 700, yoyo: true, repeat: 1, ease: "Sine.easeInOut" });
+  scene.tweens.add({ targets: ghost, angle: { from: -6, to: 6 }, duration: 350, yoyo: true, repeat: 3, ease: "Sine.easeInOut" });
   await wait(scene, 1500);
   sfx("whoosh");
-  scene.tweens.add({ targets: eyes, alpha: 0, duration: 200 });
+  ghost.setFrame("1");                                   // the eyes go: a bedsheet
   await tween(scene, { targets: ghost, x: -40, y: 18, angle: -50, scaleY: 0.55, duration: 1300, ease: "Quad.easeIn" });
   ghost.destroy();
   const line = scene.add.text(W / 2, 150, "No ghost. Just gravity.", { fontFamily: DISPLAY, fontSize: "26px", color: "#F2E9CF", stroke: "#0E1938", strokeThickness: 5 })

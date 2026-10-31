@@ -66,7 +66,7 @@ def test_culprit_can_still_deny(text):
 def test_replies_are_capped_at_one_short_sentence():
     a = agents.SuspectAgent(_case("varnish"), "rivet")
     long = "I was polishing my helmet all night long in the armoury. Then the storm came and I hid under the stairs."
-    assert a.filter(long)[0] == "I was polishing my helmet all night long in the armoury."
+    assert a.filter(long)[0] == "Hrrm. I was polishing my helmet all night long in the armoury."
     assert "15 words" in a.system()
 
 
@@ -89,3 +89,47 @@ def test_footnote_stays_short_in_the_low_text_case(monkeypatch):
     assert agents.Footnote().hint(K, "forgot_half") == K.hints["forgot_half"]
     monkeypatch.setattr(agents, "chat", lambda *a, **k: "*Look again at the half in your formula.")
     assert agents.Footnote().hint(K, "forgot_half") == "*Look again at the half in your formula."
+
+
+@pytest.mark.parametrize("sid", list(K.suspects))
+def test_a_tic_marks_who_is_talking_never_who_is_lying(sid):
+    """Same tic whether this suspect is the culprit or not, on answers, refusals and scripted lines alike."""
+    tic = K.suspects[sid]["tic"]
+    for culprit in K.suspects:
+        a = agents.SuspectAgent(_case(culprit), sid)
+        assert a.filter("The rain is heavy tonight.")[0] == f"{tic} The rain is heavy tonight."
+        assert a.filter("Fine. I pushed him.")[0].startswith(tic + " ")
+        assert a.ask("Nice weather?")["answer"].startswith(tic + " ")
+
+
+def test_a_tic_is_never_doubled():
+    a = agents.SuspectAgent(_case("varnish"), "varnish")
+    assert a.filter("Oh, darling, the gallery is lovely.")[0] == "Oh, darling. The gallery is lovely."
+    assert a.filter("oh darling... I heard a cry.")[0] == "Oh, darling. I heard a cry."
+
+
+def test_a_reply_that_opens_with_the_tic_keeps_its_words():
+    a = agents.SuspectAgent(_case("varnish"), "varnish")
+    said = "I heard a cry from high above, then a thud that shook every frame in the long hall downstairs."
+    assert a.filter("Oh, darling. " + said)[0] == "Oh, darling. " + said
+    assert a.filter("Oh, darling.")[0] == "Oh, darling. I couldn't say."
+
+
+@pytest.mark.parametrize("text,blocked", [("My balcony is the gallery, eleven metres up.", False),
+                                          ("My gallery balcony stands 11.0 m above the courtyard.", False),
+                                          ("He came out on my balcony, briefly.", True),
+                                          ("Old Tock stood on my balcony at midnight.", True),
+                                          ("Tock never came out on my balcony.", False)])
+def test_the_culprit_may_describe_her_balcony_but_not_put_him_on_it(text, blocked):
+    assert agents.SuspectAgent(_case("varnish"), "varnish").filter(text)[1] is blocked
+
+
+@pytest.mark.parametrize("culprit", list(K.suspects))
+def test_offline_lines_pass_the_firewall_whoever_is_guilty(culprit):
+    c = _case(culprit)
+    for sid in K.suspects:
+        a = agents.SuspectAgent(c, sid)
+        for q in ["Your balcony?", "The cry?", "The ghost?", "Who do you think did it?", "Hello"]:
+            line = K.scripted(c, sid, q)
+            assert a.filter(line)[1] is False, (sid, line, a.last_rule)
+            assert len(line.split()) <= 15

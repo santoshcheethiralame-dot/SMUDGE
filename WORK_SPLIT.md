@@ -16,6 +16,16 @@ art in `game/public/assets/case10/`, suspects that plan, draft, critique and red
 **The blocker:** the case points at a `LabFall` scene that doesn't exist yet, so walking into the lab breaks it.
 Everything below waits on that.
 
+## Latest (Oct 31, late)
+
+Each plan has a "Do next" or "Review and next steps" section at the top: read that first.
+- **Kushal:** P0 is lining LabFall and the courtyard up with the art (`fall_layout.json`), then Mounika's lines,
+  the "more" click, a production build with a preview proxy, and one merged demo script.
+- **Mounika:** fix the Q&A facts and the demo script, write the cold-open and wrong-guess lines, run the
+  redact-the-names test, then the real playtests. **The playtest table is a template: nobody quotes those numbers
+  until real players produce them.**
+- **Santosh:** tics, the redact sheet and the warm cache are done; next is the full rehearsal on the production build.
+
 ## What's left
 
 | Who | What, in order | Plan |

@@ -29,16 +29,20 @@ class FallKit(Kit):
     answer_words = ("armoury", "gallery", "clock room")
     units = r"s|secs?|seconds?|m/s"
     short = True             # the demo case: one short sentence per reply
+    # each suspect's tic opens every reply (agents.SuspectAgent.tic): it marks who is talking, never who is lying
     suspects = {
-        "rivet": dict(name="Sir Rivet", role="suit of armour", room="armoury", height=4.9, t=1.0,
-                      persona="A rusty suit of armour. Booming and brave-sounding, secretly scared of the dark; "
-                              "clanks when nervous."),
-        "varnish": dict(name="Lady Varnish", role="walking portrait", room="gallery", height=11.0, t=1.5,
-                        persona="An oil portrait in a gilt frame who walks the halls. Grand and theatrical, calls "
-                                "everyone darling, adores her own reflection."),
-        "pendle": dict(name="Pendle", role="clock-room pendulum", room="clock room", height=19.6, t=2.0,
-                       persona="The tower clock's pendulum. Anxious, talks in ticks and tocks, swings faster when "
-                               "nervous, hates being rushed."),
+        "rivet": dict(tic="Hrrm.", name="Sir Rivet", role="suit of armour", room="armoury", height=4.9, t=1.0,
+                      persona="A rusty suit of armour who talks like an old knight: booming, boastful, a little "
+                              "archaic (upon my honour, blast and bother, valour), then gives away that he is scared "
+                              "of the dark, the storm and ghosts. Mentions his clanking joints and his visor."),
+        "varnish": dict(tic="Oh, darling.", name="Lady Varnish", role="walking portrait", room="gallery", height=11.0, t=1.5,
+                        persona="An oil portrait in a gilt frame who walks the halls. Talks like a stage diva: grand, "
+                                "theatrical, painterly words (masterpiece, brushstroke, canvas, frame, varnish), "
+                                "calls everyone darling, finds everything either exquisite or dreadfully vulgar."),
+        "pendle": dict(tic="Tick... tock.", name="Pendle", role="clock-room pendulum", room="clock room", height=19.6, t=2.0,
+                       persona="The tower clock's pendulum. Talks in short nervous bursts, repeats a word when "
+                               "flustered, uses clock words (swing, chime, wind, gears, on the dot), hates being "
+                               "rushed. He is this nervous with everyone, about everything."),
     }
     gossip = {"rivet": "varnish", "varnish": "pendle", "pendle": "rivet"}
     hints = {
@@ -155,24 +159,40 @@ class FallKit(Kit):
             return True
         if CONFESS.search(text):
             return True
-        return sid == case.culprit and bool(re.search(r"\bmy balcony\b", text, re.I)) and not re.search(WORDS, text, re.I)
+        # the culprit may describe their balcony, but not put Old Tock (or anyone) on it
+        on_it = re.search(r"\bmy balcony\b", text, re.I) and re.search(r"\b(he|him|tock|came|come|went|stood|was there)\b", text, re.I)
+        return sid == case.culprit and bool(on_it) and not re.search(WORDS, text, re.I)
 
     def leak_examples(self, case):
         s = self.suspects[case.culprit]
         return ["Fine. I pushed him off.", "He came out on my balcony at midnight, if you must know.",
                 f"He fell {s['t']:g} seconds, I counted."]
 
+    # offline lines in each suspect's voice (Mounika's), used when no model answers. True for every suspect,
+    # guilty or not, except the balcony line, which is the culprit's sworn lie
+    LINES = {
+        "rivet": {"balcony": "My armoury balcony, {h} m up. Tock never stepped out on it, upon my honour.",
+                  "cry": "A terrible shriek and a crash. It rattled my rusted joints.",
+                  "ghost": "A white phantom fluttered on the tower in the storm. Blast and bother.",
+                  "who": "Can't say. {other}'s balcony is the {oroom}, mind.",
+                  "else": "Preposterous. I stood guard like an honourable knight all night."},
+        "varnish": {"balcony": "The gallery balcony is mine, {h} m up, and Old Tock never came out.",
+                    "cry": "Such an unrefined cry, followed by a dreadful thud below.",
+                    "ghost": "A pale shape danced upon the tower like a true phantom.",
+                    "who": "I couldn't say. {other}'s balcony is the {oroom}, you know.",
+                    "else": "I was admiring my own frame all night."},
+        "pendle": {"balcony": "Clock room balcony, {h} m up. He never came near my clockwork tonight!",
+                   "cry": "A shrill cry, then a thud. It made my swing skip!",
+                   "ghost": "A white shape floated past my clock face in the wind!",
+                   "who": "I don't know, I don't know! {other}'s balcony is the {oroom}.",
+                   "else": "Impossible, impossible. I was swinging steadily all night!"},
+    }
+
     def scripted(self, case, sid, question):
         q = question.lower()
-        s, o = self.suspects[sid], self.suspects[self.gossip[sid]]
-        if any(k in q for k in ["balcony", "room", "where", "high", "come out"]):
-            return f"My balcony's the {s['room']}, {s['height']} m up. He never came out on it."
-        if any(k in q for k in ["hear", "cry", "thud", "sound", "midnight"]):
-            return "A cry, then a thud. Then only the rain."
-        if any(k in q for k in ["ghost", "shape", "see", "saw", "white"]):
-            return "A white shape on the tower. The ghost, they say."
-        if any(k in q for k in ["who", "think", "gossip", "suspect"]):
-            return f"Can't say. {o['name']}'s balcony is the {o['room']}, mind."
-        return {"rivet": "Ask, then. Quickly. It's dark.",
-                "varnish": "Ask away, darling.",
-                "pendle": "Tick... ask. Tock... slowly."}[sid]
+        o = self.suspects[self.gossip[sid]]
+        key = ("balcony" if any(k in q for k in ["balcony", "room", "where", "high", "come out"]) else
+               "cry" if any(k in q for k in ["hear", "cry", "thud", "sound", "midnight"]) else
+               "ghost" if any(k in q for k in ["ghost", "shape", "see", "saw", "white"]) else
+               "who" if any(k in q for k in ["who", "think", "gossip", "suspect"]) else "else")
+        return self.LINES[sid][key].format(h=self.suspects[sid]["height"], other=o["name"], oroom=o["room"])

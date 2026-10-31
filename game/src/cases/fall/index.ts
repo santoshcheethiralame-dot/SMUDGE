@@ -7,14 +7,16 @@ import { sfx } from "../../audio";
 import { ColdOpen, coldOpenDone } from "../../scenes/ColdOpen";
 import { LabFall } from "../../scenes/LabFall";
 import { ghostReveal, exitCheck } from "./finale";
+import { FALL, World3 } from "./layout";
 
-// The backdrop art is 720x270 and the tower stands on its right third (art/world/placeholder_fall.py).
-const TOWER = { x: 630, balconies: [{ id: "rivet", y: 163, label: "Sir Rivet's armoury" },
-  { id: "varnish", y: 133, label: "Lady Varnish's gallery" }, { id: "pendle", y: 90, label: "Pendle's clock room" }] };
-const CLUES: { id: string; tag: string; x: number; y: number; w: number; h: number; note: string }[] = [
-  { id: "sheet", tag: "SHEET", x: 505, y: 206, w: 90, h: 40, note: "A chalk outline. A white sheet." },
-  { id: "gramophone", tag: "RECORDER", x: 443, y: 196, w: 40, h: 36, note: "It recorded all night." },
-  { id: "tower", tag: "TOWER", x: TOWER.x, y: 115, w: 90, h: 120, note: "Three balconies. Three heights." },
+// Where things are in the art comes from fall_layout.json (world [x, y, z], run through the district's project()).
+const LAB = FALL.district;
+const BALCONIES: { id: string; label: string }[] = [
+  { id: "rivet", label: "Sir Rivet's armoury" }, { id: "varnish", label: "Lady Varnish's gallery" }, { id: "pendle", label: "Pendle's clock room" }];
+const CLUES: { id: string; tag: string; at: World3; w: number; h: number; note: string }[] = [
+  { id: "sheet", tag: "SHEET", at: LAB.clues.sheet as World3, w: 90, h: 40, note: "A chalk outline. A white sheet." },
+  { id: "gramophone", tag: "RECORDER", at: LAB.clues.gramophone as World3, w: 40, h: 36, note: "It recorded all night." },
+  { id: "tower", tag: "TOWER", at: LAB.clues.tower as World3, w: 90, h: 120, note: "Three balconies. Three heights." },
 ];
 
 /** Clues found this visit, kept across the lab and back. Cleared by a fresh page load. */
@@ -39,8 +41,10 @@ const CASE: CaseDef = {
     { who: "smudge", expr: "determined", text: "So it's the ghost. Case closed!" },
     { who: "foot", expr: "neutral", text: "Check it. A hunch isn't evidence." },
   ],
-  inspect: [{ who: "foot", expr: "neutral", text: "Three balconies. Three heights." }],
-  toLab: { who: "smudge", expr: "determined", text: "The gramophone heard everything." },
+  inspect: [{ who: "foot", expr: "neutral", text: "Three balconies. Three heights." },
+    { who: "smudge", expr: "thinking", text: "Lightning reveals clues hidden in the rain." }],
+  afterFirst: [{ who: "foot", expr: "worried", text: "Talk won't crack them. Use the lab." }],
+  toLab: { who: "smudge", expr: "determined", text: "The gramophone caught every sound." },
   afterLab: { who: "foot", expr: "happy", text: "Now we know the balcony." },
   checklist: ["Inspect the courtyard", "Time the fall"],
   stageLabel: "Chalk outline",
@@ -55,19 +59,19 @@ const CASE: CaseDef = {
   restore: { glyphs: ["h", " ", "=", " ", "½", "g", "t", "²"], sub: "The law of falling bodies is back in the book.",
     card: "h = ½gt²", cardSub: "Motion · Gravitation", reveal: ghostReveal, after: exitCheck },
   solved: (name) => `${name} did it. No ghost. Just gravity.`,
-  assets: { folder: "case10", images: ["manor_glitch", "manor_restored", "lab_tower", "lab_gramophone"], suspects: ["rivet", "varnish", "pendle"] },
+  assets: { folder: "case10", images: ["manor_glitch", "manor_restored", "lab_tower", "lab_gramophone", "sack", "sheet_ghost"], suspects: ["rivet", "varnish", "pendle"] },
   map: { x: 400, y: 120, icon: "tower" },
   layout: {
-    width: 720, cu: 0, cv: 90, startX: -330,
+    width: LAB.width, cu: LAB.cu, cv: LAB.cv, startX: -330,
     spots: [
-      { key: "rivet", x: -250, markY: 50, markZ: 8 },
-      { key: "varnish", x: -120, markY: 50, markZ: 8 },
-      { key: "pendle", x: 20, markY: 50, markZ: 8 },
-      { key: "stage", x: 145, markY: 30, markZ: -40 },
+      { key: "rivet", x: LAB.hotspots.rivet, markY: 50, markZ: 8 },
+      { key: "varnish", x: LAB.hotspots.varnish, markY: 50, markZ: 8 },
+      { key: "pendle", x: LAB.hotspots.pendle, markY: 50, markZ: 8 },
+      { key: "stage", x: LAB.hotspots.stage, markY: 30, markZ: -40 },
     ],
-    suspects: [{ key: "rivet", x: -250, z: 8 }, { key: "varnish", x: -120, z: 8 }, { key: "pendle", x: 20, z: 8 }],
+    suspects: ["rivet", "varnish", "pendle"].map((key) => ({ key, x: LAB.hotspots[key as "rivet"], z: 8 })),
   },
-  decorate(scene, _P, restored) {
+  decorate(scene, P, restored) {
     // this case's own scenes are added here, the first time the district opens, so main.ts needs no edit
     if (!scene.scene.get("LabFall")) scene.scene.add("LabFall", LabFall);
     if (!scene.scene.get("ColdOpen")) scene.scene.add("ColdOpen", ColdOpen);
@@ -83,11 +87,12 @@ const CASE: CaseDef = {
       alpha: { start: 0.55, end: 0.15 }, tint: 0x9bb0d8, scaleY: 5,
     }).setDepth(800);
 
-    // the sheet on the washing line flaps
-    const sheet = scene.add.rectangle(140, 126, 56, 40, 0xebebf5).setOrigin(0.5, 0).setAlpha(0.9).setDepth(2);
-    scene.tweens.add({ targets: sheet, angle: { from: -4, to: 4 }, scaleX: { from: 1, to: 0.9 }, duration: 700, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    // (the sheet on the washing line is in the backdrop; the sheet_ghost sprite appears in the ghost reveal)
 
     // HUD of clues found
+    const at = CLUES.map((c) => P(...c.at));
+    const towerX = P(...(LAB.clues.tower as World3)).x;
+    const balconyY = BALCONIES.map((b) => P(...(LAB.balconies[b.id as "rivet"] as World3)).y);
     const hud = CLUES.map((c, i) => scene.add.text(8 + i * 62, 26, c.tag, { fontFamily: FONT, fontSize: "8px", color: "#8F8268", backgroundColor: "#0E1938" })
       .setPadding(3, 1, 3, 1).setScrollFactor(0).setDepth(900));
     const refresh = () => CLUES.forEach((c, i) => hud[i].setColor(found.has(c.id) ? "#FAC775" : "#8F8268"));
@@ -95,7 +100,7 @@ const CASE: CaseDef = {
 
     // lightning: a flash every 6 to 10 s; clues can be clicked for 600 ms after it
     let litUntil = 0;
-    const glows = [...CLUES.map((c) => ({ x: c.x, y: c.y })), ...TOWER.balconies.map((b) => ({ x: TOWER.x, y: b.y }))].map((p) =>
+    const glows = [...CLUES.filter((c) => c.id !== "tower").map((c, i) => ({ x: at[CLUES.indexOf(c)].x, y: at[CLUES.indexOf(c)].y })), ...balconyY.map((y) => ({ x: towerX, y }))].map((p) =>
       scene.add.image(p.x, p.y, "glow64").setBlendMode(Phaser.BlendModes.ADD).setTint(0xfff0c8).setAlpha(0).setDepth(3));
     const flash = scene.add.rectangle(0, 0, W, H, 0xffffff).setOrigin(0).setScrollFactor(0).setAlpha(0).setDepth(850);
     const strike = () => {
@@ -119,11 +124,13 @@ const CASE: CaseDef = {
       say(x, y - 8, note);
       if (!found.has(id)) { found.add(id); refresh(); }
     };
-    for (const c of CLUES.filter((c) => c.id !== "tower")) {
-      scene.add.zone(c.x, c.y, c.w, c.h).setInteractive().on("pointerdown", () => hit(c.id, c.x, c.y - c.h / 2, c.note));
+    for (const [i, c] of CLUES.entries()) {
+      if (c.id === "tower") continue;
+      const p = at[i];
+      scene.add.zone(p.x, p.y, c.w, c.h).setInteractive().on("pointerdown", () => hit(c.id, p.x, p.y - c.h / 2, c.note));
     }
-    for (const b of TOWER.balconies) {
-      scene.add.zone(TOWER.x, b.y, 90, 30).setInteractive().on("pointerdown", () => hit("tower", TOWER.x, b.y - 16, b.label));
+    for (const [i, b] of BALCONIES.entries()) {
+      scene.add.zone(towerX, balconyY[i], 90, 30).setInteractive().on("pointerdown", () => hit("tower", towerX, balconyY[i] - 16, b.label));
     }
   },
 };

@@ -36,6 +36,8 @@ export interface CaseDef {
   chips: Record<string, string[]>;
   arrive: Line[];
   inspect: Line[];
+  /** said once, after the first suspect has been questioned and before the lab */
+  afterFirst?: Line[];
   toLab: Line;
   afterLab: Line;
   checklist: [string, string];

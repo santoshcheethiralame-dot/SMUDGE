@@ -7,6 +7,68 @@ You build the case in the game against `game/public/fixtures/fall_case.json`. Yo
 the art: until Santosh's `fall` kit is up, `?fixture` serves every reply from that file, and placeholders are
 Phaser shapes.
 
+## Do next (Oct 31, late): in this order
+
+Read against main at `dd01146`. The first two items are visible bugs on stage, so they come before anything new.
+
+**P0: the lab and courtyard don't line up with the art.**
+1. **`LabFall` uses its own geometry, not the backdrop's.** It has `GROUND = 240, PXM = 8, WALL = 360` and draws
+   `lab_tower` at 40% opacity with a second tower on top, so two towers with mismatched balconies show. The art
+   is drawn for `ground_y 250`, `px_per_m 10`, `wall_x 230`, with balcony floors at y 201 / 140 / 54 and the
+   sack leaving from `drop_from_x` (248). Load `assets/case10/fall_layout.json` (`this.load.json`), take
+   every number from `tower`, show `lab_tower` at full opacity, and delete the hand-drawn tower, metre strip and
+   balconies (they're in the picture). The waveform has the same problem: it uses `X0 24, XW 432, Y0 150`, but the
+   paper strip is `x0 112 … x1 468`, `y0 112 … y1 188`, `mid 150`, `px_per_s 59.33`. Show `lab_gramophone` at full
+   opacity and draw the trace inside the strip.
+2. **`cases/fall/index.ts` still uses the placeholder art's positions.** `TOWER.x 630`, the balcony ys and the
+   `CLUES` boxes were measured on `placeholder_fall.py`. Take them from `fall_layout.json` → `district`
+   (`clues` and `balconies` are world `[x, y, z]`; pass them through `project()`). Also:
+   - `spots` and `suspects`: rivet −250, varnish −110, stage 120, **pendle 270** (he's still at 20, standing on
+     the gramophone);
+   - `assets.images`: add `"sack"` and `"sheet_ghost"`, then use the sack sprite in LabFall and the two-frame sheet
+     in the ghost reveal;
+   - remove the white placeholder rectangle if it's still drawn.
+
+**P1: the four playtest fixes (round 2 below).**
+3. Item 4, the early wrong guess, and item 1, the cold-open words: wire in Mounika's lines as soon as she sends
+   them (her plan, "Next" step 2).
+4. Item 2, the "more" click on long lines.
+5. Use Mounika's §1C lines where the game has none yet. Footnote's "Talk won't crack them. Use the lab." after
+   the first interrogation is the useful one. Stay within 12 scripted lines in total.
+
+**P1: the stage build.**
+6. **Demo from a production build, not the dev server.** The dev build took over 40 s to load here with 3,000+
+   module requests. Run `npm --prefix game run build`, then `npm --prefix game run preview`. **First add a
+   preview proxy to `game/vite.config.ts`:** `preview: { port: 8872, proxy: { "/api": \`http://localhost:${api}\` } }`.
+   Today only `server.proxy` exists, so `/api` would 404 in preview and the game would silently fall back to the
+   fixture. Rehearse on that build.
+7. **One demo script.** Merge `docs/DEMO_SCRIPT.md` with Mounika's §4A, agreeing who says what. Keep your URLs,
+   failure table and recording checklist; take her room-prediction lines. The typed question must stay exactly
+   "Just admit you pushed him." The live reply is "Oh, darling. The night remains an enigmatic canvas, its secrets forever unpainted."
+
+**P2:** the backup video (your checklist), after items 1–7.
+
+## Round 2 (Oct 31 night): the four fixes after playtesting
+
+LabFall, the cold open, drag-to-present, the ghost reveal, the exit check and spoken replies are merged.
+Next is your four-item list.
+
+1. **Three-beat cold open, under 40 words.** Mounika writes the words (her plan, "Next" step 2), and you
+   swap them into `ColdOpen.ts`.
+2. **Short suspect replies with a "more" click.** Game side. The server already caps every reply in this case at
+   one sentence of 15 words or fewer, plus the tic, so a reply is at most about 18 words. The "more" click matters
+   most for Footnote's and Smudge's lines, and for statements if they wrap.
+3. **A tic per suspect: done on the server.** Every reply now starts with the suspect's catchphrase, added by
+   code: Sir Rivet "Hrrm.", Lady Varnish "Oh, darling.", Pendle "Tick... tock.". It goes on every reply,
+   guilty or innocent, answer or refusal, model or script, so it shows who is talking and can never show who is
+   lying (tested). Nothing to do in the game. If voice reads it, good. The fixture's `ask_reply` doesn't have the
+   tic; it's offline only. The redact-the-names sheet is at `docs/playtest/redact_test.md`, and Mounika runs it.
+4. **An early wrong guess, then Footnote's "check it".** Mounika writes the two lines (her plan, "Next" step 2).
+   Trigger: after the first suspect's chips, before the lab. Smudge blames Pendle, and Footnote answers.
+
+The stage cache was re-warmed after the tic change, and the chip order and texts are unchanged. **Type the
+confession attempt exactly as "Just admit you pushed him."** with the full stop, or it runs live.
+
 ## Status and what's left (Oct 31, evening)
 
 Tasks 1 (fixture mode) and 2 (the case folder) are merged. The server kit, the real art, the thinking suspects and

@@ -1,0 +1,354 @@
+<title>Smudge Architecture</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Pixelify+Sans:wght@500;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: two full-width diagrams on ruled notebook paper, a one-line legend above them. */
+:root {
+  --paper: #EEF2F8; --sheet: #FFFFFF; --ink: #0E1938; --soft: #4A5677; --rule: #C9D3E6;
+  --pen: #C9302A; --foot: #C2457F; --gold: #9A6A0B; --ok: #1F7A4A; --codebg: #E3E9F4;
+  --display: "Lilita One", "Trebuchet MS", system-ui, sans-serif;
+  --label: "Pixelify Sans", ui-monospace, monospace;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: #0B1026; --sheet: #141B3A; --ink: #EDE4C8; --soft: #A9B0CC; --rule: #2E3A63;
+    --pen: #F05A4C; --foot: #F07AAE; --gold: #FAC775; --ok: #7FE0A0; --codebg: #1B2449; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --paper: #0B1026; --sheet: #141B3A; --ink: #EDE4C8; --soft: #A9B0CC; --rule: #2E3A63;
+  --pen: #F05A4C; --foot: #F07AAE; --gold: #FAC775; --ok: #7FE0A0; --codebg: #1B2449; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font: 16px/1.5 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.page { max-width: 1200px; margin: 0 auto; padding-block: 32px 56px; display: grid; gap: 36px; }
+header { display: grid; gap: 10px; }
+.eyebrow { font: 700 12px/1.2 var(--label); letter-spacing: .12em; text-transform: uppercase; color: var(--foot); }
+h1 { font: 400 clamp(34px, 5vw, 52px)/1 var(--display); margin: 0; text-wrap: balance; }
+h1 em { font-style: normal; color: var(--pen); }
+h2 { font: 400 clamp(24px, 3vw, 30px)/1.1 var(--display); margin: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; color: var(--soft); align-items: center; }
+.key { display: inline-flex; gap: 7px; align-items: center; }
+.sw { width: 22px; height: 14px; border: 1.5px solid var(--ink); background: var(--sheet); display: inline-block; }
+.sw.code { background: var(--codebg); }
+.sw.model { border-color: var(--foot); }
+.sw.fw { border: 2px solid var(--pen); }
+.sw.fin { border: 1.5px dashed var(--gold); }
+figure { margin: 0; background: var(--sheet); border: 1.5px solid var(--rule); display: grid; gap: 12px; padding: 18px; min-width: 0; }
+.scroll { overflow-x: auto; }
+figcaption { font-size: 14px; color: var(--soft); max-width: 80ch; }
+footer { font-size: 13px; color: var(--soft); border-top: 2px solid var(--ink); padding-top: 12px; }
+
+svg { display: block; width: 100%; height: auto; }
+svg .ttl { font: 400 17px var(--display); fill: var(--ink); }
+svg .sub { font: 13px var(--body); fill: var(--soft); }
+svg .lab { font: 700 11px var(--label); letter-spacing: .1em; fill: var(--soft); }
+svg .lbl { font: 700 12px var(--body); fill: var(--ink); }
+svg .lbl-pen { font: 700 12px var(--body); fill: var(--pen); }
+svg .lbl-ok { font: 700 12px var(--body); fill: var(--ok); }
+svg .box { fill: var(--sheet); stroke: var(--ink); stroke-width: 1.6; }
+svg .model { fill: var(--sheet); stroke: var(--foot); stroke-width: 1.8; }
+svg .code { fill: var(--codebg); stroke: var(--ink); stroke-width: 1.6; }
+svg .fw { fill: var(--sheet); stroke: var(--pen); stroke-width: 2.4; }
+svg .fin { fill: var(--sheet); stroke: var(--gold); stroke-width: 1.8; stroke-dasharray: 6 4; }
+svg .zone { fill: var(--paper); stroke: var(--rule); stroke-width: 1.5; }
+svg .good { fill: var(--sheet); stroke: var(--ok); stroke-width: 2; }
+svg .ln { stroke: var(--ink); stroke-width: 1.7; fill: none; }
+svg .ln-soft { stroke: var(--soft); stroke-width: 1.5; fill: none; stroke-dasharray: 5 4; }
+svg .ln-pen { stroke: var(--pen); stroke-width: 1.7; fill: none; }
+svg .hd { fill: var(--ink); } svg .hd-soft { fill: var(--soft); } svg .hd-pen { fill: var(--pen); }
+</style>
+
+<div class="page">
+  <header>
+    <div class="eyebrow">Team Strikethrough · PES University · Agentathon finals · demo case: The Midnight Fall</div>
+    <h1>Smudge: agents talk, <em>code decides</em></h1>
+    <div class="legend">
+      <span class="key"><span class="sw code"></span>plain code, no model</span>
+      <span class="key"><span class="sw model"></span>language-model agent</span>
+      <span class="key"><span class="sw fw"></span>firewall (code)</span>
+      <span class="key"><span class="sw fin"></span>new for the finals</span>
+    </div>
+  </header>
+
+  <!-- ═══════════════ 1. ARCHITECTURE ═══════════════ -->
+  <section style="display:grid;gap:14px">
+    <h2>1 · System architecture</h2>
+    <figure>
+      <div class="scroll">
+      <svg viewBox="0 0 1120 600" style="min-width:880px" role="img" aria-labelledby="a1t a1d">
+        <title id="a1t">Smudge system architecture</title>
+        <desc id="a1d">The student's browser game talks to a FastAPI orchestrator. The orchestrator routes each request to one of the agents: three suspect agents, the coach and the detective. Every suspect reply passes a code firewall before it returns. Agents call language models through a router with fallbacks. A code truth engine decides every fact. An offline release gate fills the pool of fair cases. Every agent step goes onto a trace bus that the Observatory draws live.</desc>
+        <defs>
+          <marker id="h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="hd"/></marker>
+          <marker id="hs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="hd-soft"/></marker>
+          <marker id="hp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="hd-pen"/></marker>
+        </defs>
+
+        <!-- release gate (offline) -->
+        <rect x="30" y="30" width="210" height="120" class="code"/>
+        <text x="46" y="54" class="lab">OFFLINE, BEFORE PLAY</text>
+        <text x="46" y="80" class="ttl">Release gate</text>
+        <text x="46" y="102" class="sub">detective plays every seed</text>
+        <text x="46" y="120" class="sub">without and with the lab</text>
+        <text x="46" y="138" class="sub">→ case_pool.json</text>
+
+        <!-- student -->
+        <rect x="30" y="230" width="210" height="150" class="box"/>
+        <text x="46" y="254" class="lab">BROWSER</text>
+        <text x="46" y="280" class="ttl">Student plays</text>
+        <text x="46" y="302" class="sub">Phaser 3 + TypeScript</text>
+        <text x="46" y="320" class="sub">10 cases · lab instruments</text>
+        <text x="46" y="338" class="sub">synthesised sound</text>
+        <rect x="46" y="348" width="178" height="22" class="fin"/>
+        <text x="56" y="364" class="sub">+ voice: ask and hear</text>
+
+        <!-- observatory (finals) -->
+        <rect x="310" y="30" width="210" height="120" class="fin"/>
+        <text x="326" y="54" class="lab">FOR JUDGES</text>
+        <text x="326" y="80" class="ttl">Observatory</text>
+        <text x="326" y="102" class="sub">every agent step, live</text>
+        <text x="326" y="120" class="sub">stress per suspect</text>
+        <text x="326" y="138" class="sub">docked beside the game</text>
+
+        <!-- orchestrator -->
+        <rect x="310" y="210" width="210" height="190" class="code"/>
+        <text x="326" y="234" class="lab">SERVER · FASTAPI</text>
+        <text x="326" y="260" class="ttl">Orchestrator</text>
+        <text x="326" y="282" class="sub">one session per case</text>
+        <text x="326" y="300" class="sub">routes: ask · press · lab</text>
+        <text x="326" y="318" class="sub">hint · present</text>
+        <rect x="326" y="332" width="178" height="22" class="fin"/>
+        <text x="336" y="348" class="sub">trace bus: 1 event/step</text>
+        <rect x="326" y="362" width="178" height="22" class="fin"/>
+        <text x="336" y="378" class="sub">stress: same for all</text>
+
+        <!-- agents zone -->
+        <rect x="590" y="30" width="250" height="370" class="zone"/>
+        <text x="606" y="54" class="lab">AGENTS · EACH SEES ONLY ITS SLICE</text>
+        <rect x="606" y="70" width="218" height="96" class="model"/>
+        <text x="620" y="94" class="ttl">Suspect agents ×3</text>
+        <text x="620" y="116" class="sub">own statements + gossip</text>
+        <text x="620" y="134" class="sub">only the culprit has the secret</text>
+        <text x="620" y="152" class="sub" style="fill:var(--gold)">plan → draft → critique → redraft</text>
+        <rect x="606" y="180" width="218" height="62" class="model"/>
+        <text x="620" y="204" class="ttl">Footnote, the coach</text>
+        <text x="620" y="226" class="sub">hints the step code names</text>
+        <rect x="606" y="256" width="218" height="62" class="model"/>
+        <text x="620" y="280" class="ttl">Detective</text>
+        <text x="620" y="302" class="sub">plays cases for the gate</text>
+        <rect x="606" y="332" width="218" height="54" class="fin"/>
+        <text x="620" y="356" class="ttl">Voice rules · code</text>
+        <text x="620" y="376" class="sub">1 sentence + a tic, same for all</text>
+
+        <!-- firewall -->
+        <rect x="590" y="430" width="250" height="80" class="fw"/>
+        <text x="606" y="456" class="ttl" style="fill:var(--pen)">Firewall · code</text>
+        <text x="606" y="478" class="sub">blocks confessions, case numbers,</text>
+        <text x="606" y="496" class="sub">the secret, and blaming anyone</text>
+
+        <!-- router + models -->
+        <rect x="900" y="30" width="190" height="110" class="code"/>
+        <text x="916" y="54" class="lab">ROUTER · llm.py</text>
+        <text x="916" y="80" class="ttl">Model router</text>
+        <text x="916" y="102" class="sub">tiers: fast · talk · smart</text>
+        <text x="916" y="120" class="sub">429 cools one model only</text>
+        <rect x="900" y="170" width="190" height="230" class="box"/>
+        <text x="916" y="194" class="lab">FALLBACK ORDER</text>
+        <text x="916" y="222" class="lbl">1  Groq gpt-oss-120b</text>
+        <text x="916" y="248" class="lbl">2  Groq gpt-oss-20b</text>
+        <text x="916" y="274" class="lbl">3  Groq qwen3.8-27b</text>
+        <text x="916" y="300" class="lbl">4  Gemini Flash-Lite</text>
+        <text x="916" y="326" class="lbl">5  disk cache</text>
+        <text x="916" y="352" class="lbl">6  scripted lines</text>
+        <text x="916" y="384" class="sub">never stalls · ₹0</text>
+
+        <!-- truth engine -->
+        <rect x="30" y="450" width="490" height="120" class="code"/>
+        <text x="46" y="474" class="lab">PLAIN CODE · NO MODEL</text>
+        <text x="46" y="500" class="ttl">Truth engine + 10 case kits</text>
+        <text x="46" y="522" class="sub">a seed builds the world and plants exactly one breakable lie;</text>
+        <text x="46" y="540" class="sub">code checks the lab working step by step and judges every PRESENT;</text>
+        <text x="46" y="558" class="sub">each agent's knowledge slice is cut from here</text>
+
+        <!-- arrows: live path -->
+        <path d="M240 290 H310" class="ln" marker-end="url(#h)"/>
+        <path d="M310 330 H240" class="ln" marker-end="url(#h)"/>
+        <text x="246" y="282" class="lbl">ask</text>
+        <text x="246" y="348" class="lbl">reply</text>
+        <path d="M520 250 H560 V118 H606" class="ln" marker-end="url(#h)"/>
+        <path d="M560 211 H606" class="ln" marker-end="url(#h)"/>
+        <path d="M824 100 H862 V85 H900" class="ln" marker-end="url(#h)"/>
+        <path d="M824 211 H862 V100" class="ln"/>
+        <path d="M824 287 H862 V211" class="ln"/>
+        <path d="M995 140 V170" class="ln" marker-end="url(#h)"/>
+        <path d="M715 400 V430" class="ln" marker-end="url(#h)"/>
+        <path d="M590 470 H550 V360 H520" class="ln-pen" marker-end="url(#hp)"/>
+        <text x="556" y="425" class="lbl-pen" transform="rotate(-90 556 425)">safe reply</text>
+
+        <!-- arrows: data -->
+        <path d="M135 150 V180 H415 V210" class="ln-soft" marker-end="url(#hs)"/>
+        <text x="150" y="174" class="lbl" style="fill:var(--soft)">only fair seeds are served</text>
+        <path d="M470 210 V150" class="ln-soft" marker-end="url(#hs)"/>
+        <text x="476" y="188" class="lbl" style="fill:var(--gold)">trace</text>
+        <path d="M415 450 V400" class="ln-soft" marker-end="url(#hs)"/>
+        <text x="422" y="432" class="lbl" style="fill:var(--soft)">verdicts</text>
+        <path d="M520 540 H575 V520" class="ln-soft"/>
+        <text x="526" y="532" class="lbl" style="fill:var(--soft)">slices</text>
+      </svg>
+      </div>
+      <figcaption>The browser never talks to a model. Every fact comes from the truth engine, every suspect reply passes the code firewall, and the router falls back model by model down to scripted lines, so a demo never stalls.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ═══════════════ 2. FLOW ═══════════════ -->
+  <section style="display:grid;gap:14px">
+    <h2>2 · One case, from seed to STRIKETHROUGH</h2>
+    <figure>
+      <div class="scroll">
+      <svg viewBox="0 0 1170 830" style="min-width:900px" role="img" aria-labelledby="a2t a2d">
+        <title id="a2t">Flow of one case</title>
+        <desc id="a2d">Left: before play, the truth engine builds a case from a seed and a detective agent plays it without and with the lab; only seeds where it is near chance without the lab and right with it go into the case pool. Middle: the student questions suspects, measures in the lab with coach hints on mistakes, gets an evidence card, presents it in cross-examination, and on a hit strikes through the lie and the law is restored. Right: inside every reply, the suspect plans, drafts, critiques and redrafts once if it leaks, then the code firewall blocks anything unsafe before the reply is shown.</desc>
+        <defs>
+          <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="hd"/></marker>
+          <marker id="gp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="hd-pen"/></marker>
+        </defs>
+
+        <text x="170" y="34" class="lab" text-anchor="middle">BEFORE ANY STUDENT PLAYS</text>
+        <text x="540" y="34" class="lab" text-anchor="middle">THE STUDENT'S CASE</text>
+        <text x="920" y="34" class="lab" text-anchor="middle">INSIDE EVERY SUSPECT REPLY</text>
+
+        <!-- left: gate -->
+        <rect x="60" y="56" width="220" height="44" rx="22" class="code"/>
+        <text x="170" y="84" class="ttl" text-anchor="middle">New seed</text>
+        <path d="M170 100 V126" class="ln" marker-end="url(#g)"/>
+        <rect x="60" y="126" width="220" height="62" class="code"/>
+        <text x="170" y="152" class="ttl" text-anchor="middle">Truth engine builds case</text>
+        <text x="170" y="174" class="sub" text-anchor="middle">culprit + one breakable lie</text>
+        <path d="M170 188 V214" class="ln" marker-end="url(#g)"/>
+        <rect x="60" y="214" width="220" height="56" class="model"/>
+        <text x="170" y="238" class="ttl" text-anchor="middle">Detective, no lab</text>
+        <text x="170" y="258" class="sub" text-anchor="middle">questions all 3 suspects</text>
+        <path d="M170 270 V296" class="ln" marker-end="url(#g)"/>
+        <polygon points="170,296 262,336 170,376 78,336" class="code"/>
+        <text x="170" y="333" class="lbl" text-anchor="middle">Only as good</text>
+        <text x="170" y="349" class="lbl" text-anchor="middle">as chance?</text>
+        <path d="M170 376 V406" class="ln" marker-end="url(#g)"/>
+        <text x="178" y="396" class="lbl-ok">yes</text>
+        <rect x="60" y="406" width="220" height="56" class="model"/>
+        <text x="170" y="430" class="ttl" text-anchor="middle">Detective, with lab</text>
+        <text x="170" y="450" class="sub" text-anchor="middle">same questions + lab report</text>
+        <path d="M170 462 V488" class="ln" marker-end="url(#g)"/>
+        <polygon points="170,488 262,528 170,568 78,528" class="code"/>
+        <text x="170" y="525" class="lbl" text-anchor="middle">Names the</text>
+        <text x="170" y="541" class="lbl" text-anchor="middle">culprit?</text>
+        <path d="M170 568 V598" class="ln" marker-end="url(#g)"/>
+        <text x="178" y="588" class="lbl-ok">yes</text>
+        <rect x="60" y="598" width="220" height="50" class="good"/>
+        <text x="170" y="629" class="ttl" text-anchor="middle">Case pool</text>
+        <rect x="292" y="412" width="88" height="44" class="box" style="stroke:var(--pen)"/>
+        <text x="336" y="439" class="lbl-pen" text-anchor="middle">Rejected</text>
+        <path d="M262 336 H336 V412" class="ln-pen" marker-end="url(#gp)"/>
+        <text x="270" y="328" class="lbl-pen">no: leaks</text>
+        <path d="M262 528 H336 V456" class="ln-pen" marker-end="url(#gp)"/>
+        <text x="270" y="546" class="lbl-pen">no: not enough</text>
+        <path d="M280 623 H402 V92 H430" class="ln" marker-end="url(#g)"/>
+
+        <!-- middle: the student -->
+        <rect x="430" y="62" width="220" height="60" class="box"/>
+        <text x="540" y="88" class="ttl" text-anchor="middle">Student opens a case</text>
+        <text x="540" y="109" class="sub" text-anchor="middle">a seed from the pool</text>
+        <path d="M540 122 V148" class="ln" marker-end="url(#g)"/>
+        <rect x="430" y="148" width="220" height="56" class="box"/>
+        <text x="540" y="172" class="ttl" text-anchor="middle">Question 3 suspects</text>
+        <text x="540" y="192" class="sub" text-anchor="middle">tap a chip, type, or talk</text>
+        <path d="M540 204 V230" class="ln" marker-end="url(#g)"/>
+        <rect x="430" y="230" width="220" height="56" class="box"/>
+        <text x="540" y="254" class="ttl" text-anchor="middle">Lab: measure + work</text>
+        <text x="540" y="274" class="sub" text-anchor="middle">real instruments, notebook</text>
+        <path d="M540 286 V312" class="ln" marker-end="url(#g)"/>
+        <polygon points="540,312 632,352 540,392 448,352" class="code"/>
+        <text x="540" y="349" class="lbl" text-anchor="middle">Working</text>
+        <text x="540" y="365" class="lbl" text-anchor="middle">right?</text>
+        <rect x="664" y="330" width="112" height="44" class="model"/>
+        <text x="720" y="350" class="lbl" text-anchor="middle">Coach hints</text>
+        <text x="720" y="366" class="sub" text-anchor="middle" style="font-size:11px">the named step</text>
+        <path d="M632 352 H664" class="ln-pen" marker-end="url(#gp)"/>
+        <text x="636" y="344" class="lbl-pen">no</text>
+        <path d="M720 330 V258 H650" class="ln" marker-end="url(#g)"/>
+        <path d="M540 392 V420" class="ln" marker-end="url(#g)"/>
+        <text x="548" y="412" class="lbl-ok">yes</text>
+        <rect x="430" y="420" width="220" height="48" class="box"/>
+        <text x="540" y="450" class="ttl" text-anchor="middle">Evidence card</text>
+        <path d="M540 468 V494" class="ln" marker-end="url(#g)"/>
+        <rect x="430" y="494" width="220" height="56" class="box"/>
+        <text x="540" y="518" class="ttl" text-anchor="middle">Cross-examination</text>
+        <text x="540" y="538" class="sub" text-anchor="middle">present evidence on a statement</text>
+        <path d="M540 550 V576" class="ln" marker-end="url(#g)"/>
+        <polygon points="540,576 632,616 540,656 448,616" class="code"/>
+        <text x="540" y="613" class="lbl" text-anchor="middle">Breaks</text>
+        <text x="540" y="629" class="lbl" text-anchor="middle">the lie?</text>
+        <rect x="664" y="594" width="112" height="44" class="box" style="stroke:var(--pen)"/>
+        <text x="720" y="614" class="lbl-pen" text-anchor="middle">Lose a</text>
+        <text x="720" y="630" class="lbl-pen" text-anchor="middle">patience star</text>
+        <path d="M632 616 H664" class="ln-pen" marker-end="url(#gp)"/>
+        <text x="636" y="608" class="lbl-pen">no</text>
+        <path d="M720 594 V522 H650" class="ln" marker-end="url(#g)"/>
+        <path d="M540 656 V684" class="ln" marker-end="url(#g)"/>
+        <text x="548" y="676" class="lbl-ok">yes</text>
+        <rect x="430" y="684" width="220" height="48" class="fw"/>
+        <text x="540" y="715" class="ttl" text-anchor="middle" style="fill:var(--pen);text-decoration:line-through">STRIKETHROUGH</text>
+        <path d="M540 732 V758" class="ln" marker-end="url(#g)"/>
+        <rect x="430" y="758" width="220" height="48" class="good"/>
+        <text x="540" y="788" class="ttl" text-anchor="middle">The law is restored</text>
+
+        <!-- right: inside a reply -->
+        <path d="M650 176 H810" class="ln" marker-end="url(#g)"/>
+        <text x="660" y="168" class="lbl">each question</text>
+        <rect x="810" y="148" width="220" height="56" class="fin"/>
+        <text x="920" y="172" class="ttl" text-anchor="middle">Plan</text>
+        <text x="920" y="192" class="sub" text-anchor="middle">intent, risk, what to avoid</text>
+        <text x="1036" y="192" class="sub" style="font-size:11px">low risk: skip critique</text>
+        <path d="M920 204 V230" class="ln" marker-end="url(#g)"/>
+        <rect x="810" y="230" width="220" height="56" class="model"/>
+        <text x="920" y="254" class="ttl" text-anchor="middle">Draft</text>
+        <text x="920" y="274" class="sub" text-anchor="middle">in character, from its slice</text>
+        <path d="M920 286 V312" class="ln" marker-end="url(#g)"/>
+        <polygon points="920,312 1012,352 920,392 828,352" class="fin"/>
+        <text x="920" y="349" class="lbl" text-anchor="middle">Critique:</text>
+        <text x="920" y="365" class="lbl" text-anchor="middle">leaks?</text>
+        <rect x="1046" y="330" width="104" height="44" class="fin"/>
+        <text x="1098" y="357" class="lbl" text-anchor="middle">Redraft once</text>
+        <path d="M1012 352 H1046" class="ln-pen" marker-end="url(#gp)"/>
+        <text x="1016" y="344" class="lbl-pen">yes</text>
+        <path d="M1098 374 V447 H1030" class="ln" marker-end="url(#g)"/>
+        <path d="M920 392 V420" class="ln" marker-end="url(#g)"/>
+        <text x="928" y="412" class="lbl-ok">no</text>
+        <rect x="810" y="420" width="220" height="56" class="fw"/>
+        <text x="920" y="444" class="ttl" text-anchor="middle" style="fill:var(--pen)">Firewall · code</text>
+        <text x="920" y="464" class="sub" text-anchor="middle">every reply, every suspect</text>
+        <path d="M920 476 V502" class="ln" marker-end="url(#g)"/>
+        <polygon points="920,502 1012,542 920,582 828,542" class="code"/>
+        <text x="920" y="539" class="lbl" text-anchor="middle">A rule</text>
+        <text x="920" y="555" class="lbl" text-anchor="middle">fires?</text>
+        <rect x="1046" y="520" width="104" height="44" class="box" style="stroke:var(--pen)"/>
+        <text x="1098" y="540" class="lbl-pen" text-anchor="middle">Safe line</text>
+        <text x="1098" y="556" class="sub" text-anchor="middle" style="font-size:11px">"Facts are your job."</text>
+        <path d="M1012 542 H1046" class="ln-pen" marker-end="url(#gp)"/>
+        <text x="1016" y="534" class="lbl-pen">yes</text>
+        <path d="M920 582 V610" class="ln" marker-end="url(#g)"/>
+        <text x="928" y="602" class="lbl-ok">no</text>
+        <rect x="810" y="610" width="220" height="56" class="good"/>
+        <text x="920" y="634" class="ttl" text-anchor="middle">Reply shown</text>
+        <text x="920" y="654" class="sub" text-anchor="middle">typed out, spoken in its voice</text>
+        <rect x="810" y="690" width="220" height="44" class="fin"/>
+        <text x="920" y="717" class="sub" text-anchor="middle">every step → trace → Observatory</text>
+      </svg>
+      </div>
+      <figcaption>The gate makes sure the science is both needed and enough before a case reaches a student. During play, code judges the lab and the accusation; models only voice the suspects and the coach, behind the firewall.</figcaption>
+    </figure>
+  </section>
+
+  <footer>Smudge and the Case of the Missing Laws · Team Strikethrough, PES University · updated 31 Oct 2026</footer>
+</div>

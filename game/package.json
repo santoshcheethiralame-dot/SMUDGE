@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --strictPort",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview --port 8872"
+    "preview": "vite preview"
   },
   "dependencies": {
     "phaser": "3.90.0",

@@ -23,7 +23,8 @@ SUSPECT_TIER = "talk"
 STYLE = ("Reply in character in 1 to 3 short sentences (under 45 words). Witty but kind; the players are 14 to 16. "
          "Nobody saw who did it: if asked, say you don't know, and never name, hint at or blame anyone; plain gossip "
          "you know is fine. No stage directions, no asterisks, no emojis, never mention being an AI or a game.")
-SHORT = "Reply in ONE short sentence of at most 15 words. " + STYLE.split(". ", 2)[2]
+SHORT = ("Reply in ONE short sentence of at most 15 words, unmistakably in your own voice: use your personality's "
+         "speech habits every time. " + STYLE.split(". ", 2)[2])
 PLAN = ("Before you answer, plan the reply; do not write it. Reply as JSON: {\"intent\": one of answer|deflect|reassure|"
         "joke|refuse, \"risk\": low|medium|high (how close the question comes to your secret or the case's numbers), "
         "\"must_avoid\": [up to 3 short phrases], \"strategy\": one short sentence}.")
@@ -83,6 +84,8 @@ class SuspectAgent:
         return (f"You are {self.s['name']}, the {self.s['role']} of {self.kit.place}, a town that lives inside a school textbook. "
                 f"Personality: {self.s['persona']}\nFACTS YOU KNOW:\n- " + "\n- ".join(facts) +
                 (f"\n{secret}" if secret else "") +
+                (f"\nYour catchphrase \"{self.s['tic']}\" is put in front of every reply for you; never write it yourself."
+                 if self.s.get("tic") else "") +
                 f"\nThings you already said (never contradict them):\n{said}\n{SHORT if self.kit.short else STYLE}")
 
     def _emit(self, step, verdict="ok", meta=None, **data):
@@ -181,11 +184,28 @@ class SuspectAgent:
                           else "accusation" if BLAME.search(plain) and self.names_another(plain)
                           else None)
         if self.last_rule:
-            return "I'd rather not guess, detective. Facts are your job.", True
+            return self.tic("I'd rather not guess, detective. Facts are your job."), True
         text = re.sub(r"\*[^*]{0,40}\*\s*", "", text).strip().strip('"')        # no *stage directions*
+        text = self.untic(text)        # before the cap, or a reply that opens with the tic is cut down to nothing
         if self.kit.short and len(text.split()) > 15:
             text = re.split(r"(?<=[.!?])\s", text)[0]      # the cap is code's job, not the prompt's: keep the first sentence
-        return text, False
+        return self.tic(text), False
+
+    def tic(self, text: str):
+        """The suspect's catchphrase, put on every reply by code: guilty or innocent, answer or refusal, model or
+        script. It marks who is talking and can never mark who is lying."""
+        tic = self.s.get("tic")
+        if not tic:
+            return text
+        rest = self.untic(text) or "I couldn't say."
+        return f"{tic} {rest[:1].upper()}{rest[1:]}"
+
+    def untic(self, text: str):
+        """The reply without a catchphrase the model wrote itself, so code never doubles it."""
+        tic = self.s.get("tic")
+        if not tic:
+            return text
+        return re.sub(rf"^\W*{r'\W*'.join(re.findall(r'\w+', tic))}\W*", "", text, flags=re.I).strip()
 
     def names_another(self, text: str):
         return any(re.search(rf"\b{re.escape(s['name'])}\b", text, re.I) for sid, s in self.kit.suspects.items() if sid != self.sid)

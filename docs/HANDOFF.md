@@ -2,8 +2,23 @@
 
 Read this first. It covers what the game is, how to run it and how it is built.
 
-**Finals:** what we are building now is in [WORK_SPLIT.md](../WORK_SPLIT.md) and the
-[finals spec](superpowers/specs/2026-10-30-finals-design.md). They replace the plan in §9.
+**Finals:** what we are building now is in [WORK_SPLIT.md](../WORK_SPLIT.md). The demo case is case 10,
+[The Midnight Fall](superpowers/specs/2026-10-31-midnight-fall.md); the agent side is in the
+[finals spec](superpowers/specs/2026-10-30-finals-design.md). Together they replace the plan in §9.
+
+**Finals quick reference** (everything below this box predates it):
+
+| What | How |
+|---|---|
+| Play the demo case | `?case=fall` (real server) or `?case=fall&fixture` (no server; replies from `game/public/fixtures/fall_case.json`) |
+| Pre-cache the stage questions | `cd server && python warm.py` (run twice; the second run must say every step came from the cache). Rerun after any prompt or chip change. |
+| Suspects' thinking loop | on by default: plan, draft, critique (skipped on low risk), one redraft, then the firewall. `SMUDGE_THINK=0` turns it off; `gate.py` defaults to off. |
+| Live agent feed | `GET /api/case/{cid}/trace?since=N`: events plus each suspect's stress. The Observatory polls it. |
+| Demo safety net | start the server with `SMUDGE_DEMO=1`; `POST /api/case/{cid}/demo_lab` returns the correct lab result |
+| Voices | each fall suspect's reply is one sentence of 15 words or fewer, opened by a catchphrase that code adds (`tic` in `kits/fall.py`), the same for guilty and innocent |
+| Redact-the-names test | `cd server && python redact_sheet.py` writes `docs/playtest/redact_test.md` and its key |
+| Case art | `art/world/scene_manor.py` (courtyard), `art/world/build_fall_labs.py` (labs + `fall_layout.json`), `art/mascot/src/cast/fall.py` (suspects) |
+| Architecture page | `docs/architecture.html` |
 
 ## 1. What Smudge is
 

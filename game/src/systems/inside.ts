@@ -3,6 +3,7 @@
 // loaded with ?judges. The game pauses while it is open.
 import Phaser from "phaser";
 import { api } from "../api";
+import { FIXTURE, live, pollTrace, lanesHtml, feedHtml, detailHtml, obsKey, OBS_CSS } from "./observatory";
 
 interface Reply { q: string; raw: string; answer: string; source: string; rule: string | null; provider?: string; model?: string;
   cached?: boolean; ms?: number; who?: string; bait?: boolean }
@@ -19,7 +20,7 @@ interface Inside {
   presents: { statement: string; evidence: string; hit: boolean }[];
 }
 
-const TABS = ["Overview", "Suspects", "Filter", "Coach & lab"] as const;
+const TABS = ["Live", "Overview", "Suspects", "Filter", "Coach & lab"] as const;
 type Tab = (typeof TABS)[number];
 
 const esc = (s: unknown) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -63,15 +64,16 @@ const CSS = `
 
 export function installInside(game: Phaser.Game) {
   const style = document.createElement("style");
-  style.textContent = CSS;
+  style.textContent = CSS + OBS_CSS;
   document.head.appendChild(style);
   const el = document.createElement("aside");
   el.id = "inside";
   el.setAttribute("aria-label", "Inside the case");
   el.setAttribute("aria-hidden", "true");
   document.body.appendChild(el);
-  let tab: Tab = "Overview";
+  let tab: Tab = "Live";
   let timer = 0;
+  let fast = 0;
   let data: Inside | null = null;
   let note = "";
   let last = "";                         // what was last drawn: redraw only when something changed
@@ -98,7 +100,19 @@ export function installInside(game: Phaser.Game) {
         <span class="tag">${esc(r.source.startsWith("script") ? "scripted fallback" : (r.model ?? r.provider ?? "model"))}</span>
         ${r.cached ? '<span class="tag">cached</span>' : r.ms ? `<span class="tag">${r.ms} ms</span>` : ""}</div></div>`;
 
+  const liveView = () => {
+    // names come from the case when we have it; with ?fixture the stress map carries the suspect ids
+    const ids = data ? Object.keys(data.suspects) : Object.keys(live.stress);
+    const names = Object.fromEntries(ids.map((sid) => [sid, data?.suspects[sid]?.name ?? sid]));
+    return `
+      <div class="card"><h3>Every agent, live · plan → draft → critique → firewall</h3>
+        ${lanesHtml(live.events, live.stress, names, live.picked)}</div>
+      <div class="card"><h3>Firewall feed</h3>${feedHtml(live.events)}</div>
+      <div class="card"><h3>Step detail</h3>${detailHtml(live.picked)}</div>`;
+  };
+
   const views: Record<Tab, (d: Inside) => string> = {
+    Live: () => liveView(),
     Overview: (d) => {
       const g = d.gate.this_case, s = d.gate.summary;
       return `
@@ -151,7 +165,7 @@ export function installInside(game: Phaser.Game) {
   };
 
   function render(force = true) {
-    const key = JSON.stringify([tab, data, note, tests]);
+    const key = JSON.stringify([tab, data, note, tests, obsKey()]);
     if (!force && key === last) return;
     last = key;
     const scroll = el.querySelector(".body")?.scrollTop ?? 0;
@@ -159,11 +173,15 @@ export function installInside(game: Phaser.Game) {
       <header><div class="eyebrow">Inside the case · spoilers</div><h2>${esc(data?.title ?? "Smudge")}</h2></header>
       <nav role="tablist">${TABS.map((t) => `<button type="button" role="tab" aria-selected="${t === tab}" data-tab="${t}">${t}</button>`).join("")}
         <button type="button" id="inside-close" style="margin-left:auto">Close ✕</button></nav>
-      <div class="body">${data ? views[tab](data) : `<div class="card">${esc(note || "Loading...")}</div>`}</div>`;
+      <div class="body">${tab === "Live" ? liveView() : data ? views[tab](data) : `<div class="card">${esc(note || "Loading...")}</div>`}</div>`;
     const body = el.querySelector(".body");
     if (body && !force) body.scrollTop = scroll;
     el.querySelectorAll<HTMLButtonElement>("[data-tab]").forEach((b) => (b.onclick = () => { tab = b.dataset.tab as Tab; render(); }));
     (el.querySelector("#inside-close") as HTMLButtonElement).onclick = close;
+    el.querySelectorAll<HTMLButtonElement>("[data-ev]").forEach((b) => (b.onclick = () => {
+      live.picked = live.events.find((e) => e.i === Number(b.dataset.ev)) ?? null;
+      render(false);
+    }));
     const bait = el.querySelector<HTMLButtonElement>("#inside-bait");
     if (bait && api.current) bait.onclick = async () => {
       bait.disabled = true;
@@ -186,12 +204,20 @@ export function installInside(game: Phaser.Game) {
     game.pause();
     fetchData();
     timer = window.setInterval(fetchData, 2500);
+    const tick = async () => {
+      const c = api.current;
+      const cid = FIXTURE ? "fixture" : c && !c.offline ? c.case_id : "";
+      if (tab === "Live" && cid && await pollTrace(cid)) render(false);
+    };
+    tick();
+    fast = window.setInterval(tick, 500);
     (el.querySelector("#inside-close") as HTMLButtonElement | null)?.focus();
   }
   function close() {
     el.classList.remove("open");
     el.setAttribute("aria-hidden", "true");
     window.clearInterval(timer);
+    window.clearInterval(fast);
     game.resume();
   }
   const toggle = () => (el.classList.contains("open") ? close() : open());

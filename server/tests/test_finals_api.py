@@ -55,3 +55,12 @@ def test_coach_hints_are_traced():
 
 def test_trace_of_unknown_case_is_404():
     assert client.get("/api/case/nope/trace").status_code == 404
+
+
+def test_demo_lab_needs_the_demo_flag(monkeypatch):
+    cid = _new()
+    monkeypatch.delenv("SMUDGE_DEMO", raising=False)
+    assert client.post(f"/api/case/{cid}/demo_lab").status_code == 403
+    monkeypatch.setenv("SMUDGE_DEMO", "1")
+    out = client.post(f"/api/case/{cid}/demo_lab").json()
+    assert out["ok"] and out["evidence"] == "resistor:ohmar" and out["card"]["badge"]

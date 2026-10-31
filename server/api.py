@@ -1,5 +1,6 @@
 """Agent server for the game.  uvicorn api:app --port 8873  (run from server/)"""
 import json
+import os
 import random
 from pathlib import Path
 
@@ -213,6 +214,17 @@ def trace(cid: str, since: int = 0):
     """Every agent step since event `since`, plus each suspect's stress. Polled by the Observatory."""
     c = _case(cid)
     return {"next": len(c["trace"].events), "events": c["trace"].since(since), "stress": c["stress"].view()}
+
+
+@app.post("/api/case/{cid}/demo_lab")
+def demo_lab(cid: str):
+    """Stage demos only (SMUDGE_DEMO=1): the lab result for the correct working, so a demo can skip to the cross-exam."""
+    if os.environ.get("SMUDGE_DEMO") != "1":
+        raise HTTPException(403, "demo mode is off")
+    c = _case(cid)
+    out = check_lab(c["case"], kits.get(c["case"].kit).solution(c["case"]))
+    c["labs"].append({"working": "demo", "step": out["step"], "ok": out["ok"]})
+    return out
 
 
 @app.post("/api/case/{cid}/filtertest")

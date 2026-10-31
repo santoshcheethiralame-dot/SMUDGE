@@ -7,6 +7,41 @@ You build the case in the game against `game/public/fixtures/fall_case.json`. Yo
 the art: until Santosh's `fall` kit is up, `?fixture` serves every reply from that file, and placeholders are
 Phaser shapes.
 
+## Status and what's left (Oct 31, evening)
+
+Tasks 1 (fixture mode) and 2 (the case folder) are merged. The server kit, the real art, the thinking suspects and
+`/trace` are all on main, so you can now also play on the real server (`?case=fall`, no `&fixture`).
+
+**Do next, in this order:**
+1. **Task 4, `LabFall`. This is the blocker:** the case says `lab: "LabFall"` and no such scene exists, so walking
+   into the lab breaks the case. Everything in the demo after the interrogation lives here. Use
+   `assets/case10/fall_layout.json` for every coordinate (see "The art is in" below).
+2. **Case-file fixes (10 minutes), in `cases/fall/index.ts`:**
+   - spots to match the art (`fall_layout.json` → `district.hotspots`): rivet −250, varnish −110, stage 120,
+     **pendle 270** (at x=20 he stands on the gramophone); `suspects` x values the same;
+   - add `"sack"` and `"sheet_ghost"` to `assets.images`;
+   - delete the white placeholder rectangle (the washing-line sheet is in the backdrop now).
+3. **Task 6, restore and exit check.** This is the "did they learn" proof the reviewers asked for; it outranks the
+   cold open.
+4. **Task 3, cold open.**
+5. **Task 5, drag-to-present** (the PRESENT button is the fallback).
+6. **Optional: spoken replies.** Call `speak()` on each suspect reply in `district.ts` and mute the blips while it
+   talks (your voice thread has the hooks). The mic already works.
+
+**Things the server now does that you should know:**
+- **Chips hit a warm cache.** `server/warm.py` pre-caches the stage questions in this order: Rivet "Your
+  balcony?", Varnish "Your balcony?", Varnish "The cry?", Pendle "Your balcony?", Pendle "The ghost?", Varnish
+  "Just admit you pushed him." Asked in that order on seed 1000, every reply is instant and costs no quota. Keep
+  the chip text exactly as it is, or tell Santosh so he can re-warm.
+- **The Observatory gets the full loop now:** `plan`, `draft`, `critique` (skipped on low-risk questions),
+  `redraft` when the critique flags a leak, `firewall`, `reply`, plus Footnote's `hint` events (`kind: "coach"`).
+  Stress is real: accusing questions, presses and presented evidence raise it.
+- **Footnote's hints in this case are 10 words or fewer.** `/api/lab/check` returns `hint` on a wrong step; show it
+  as is.
+- **Safety net (optional):** `POST /api/case/{cid}/demo_lab` returns the correct lab result when the server runs
+  with `SMUDGE_DEMO=1`. If `LabFall` is shaky on the day, a `?demo` flag can call it and skip to the cross-exam
+  (snippet in the old server plan, Task 8, Step 4; use seed 1000).
+
 ## Patterns to copy
 
 | You are building | Copy the shape of |

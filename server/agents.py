@@ -197,13 +197,15 @@ class SuspectAgent:
 class Footnote:
     def hint(self, kit: Kit, step: str, context: str = "", meta: dict | None = None):
         base = kit.hints.get(step, "*Take it one measurement at a time.")
+        words = 10 if kit.short else 30
         text = chat([
             {"role": "system", "content": "You are Footnote, a tiny pink asterisk who coaches a student detective. "
-             f"Give ONE Socratic hint (max 30 words). Never give the final number, the {kit.answer_noun}, or the culprit. Start with '*'. "
-             f"The student is stuck on this step: {step}. A correct hint would be along the lines of: {base}"},
+             f"Give ONE Socratic hint (max {words} words). Never give the final number, the {kit.answer_noun}, or the culprit. Start with '*'. "
+             + (f"Rephrase this hint in your own words, keeping its meaning: {base}" if kit.short else
+              f"The student is stuck on this step: {step}. A correct hint would be along the lines of: {base}")},
             {"role": "user", "content": context[:300] or "I'm stuck."}],
             tier="fast", temperature=0.5, max_tokens=80, seed_key=f"hint:{kit.id}:{step}:{context[:60]}", meta=meta)
-        if not text or re.search(r"\b\d+(\.\d+)?\b", text) or any(re.search(rf"\b{w}\b", text, re.I) for w in kit.answer_words):
+        if not text or len(text.split()) > words + 2 or re.search(r"\b\d+(\.\d+)?\b", text) or any(re.search(rf"\b{w}\b", text, re.I) for w in kit.answer_words):
             return base
         return "*" + text.strip().lstrip("*").strip()      # one asterisk, no gap: "* Detective" -> "*Detective"
 

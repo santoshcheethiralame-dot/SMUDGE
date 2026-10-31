@@ -81,3 +81,11 @@ def test_the_game_fixture_is_what_the_server_says():
         assert got == fx[key]["reply"], key
     got = c.post("/api/present", json={"case_id": cid, **fx["present_hit"]["request"]}).json()
     assert got == fx["present_hit"]["reply"]
+
+
+def test_footnote_stays_short_in_the_low_text_case(monkeypatch):
+    long = "*Remember: when you halve a value you must divide, not multiply. Did you double it instead of halving it?"
+    monkeypatch.setattr(agents, "chat", lambda *a, **k: long)
+    assert agents.Footnote().hint(K, "forgot_half") == K.hints["forgot_half"]
+    monkeypatch.setattr(agents, "chat", lambda *a, **k: "*Look again at the half in your formula.")
+    assert agents.Footnote().hint(K, "forgot_half") == "*Look again at the half in your formula."

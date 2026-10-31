@@ -7,19 +7,30 @@ Observatory) stays and runs inside it.
 
 Read [the case spec](docs/superpowers/specs/2026-10-31-midnight-fall.md) whoever you are. It is short.
 
-## Your part
+## Where we are (updated Oct 31, evening)
 
-| Who | Plan | First thing to do |
+**Done and on main:** the server side of the case (the `fall` kit, gated: with-lab 100%, no-lab 17%), all the
+art in `game/public/assets/case10/`, suspects that plan, draft, critique and redraft every reply, stress, the live
+`/trace` feed, the warm demo cache, and on Kushal's side the Observatory, the mic, fixture mode and the case folder.
+
+**The blocker:** the case points at a `LabFall` scene that doesn't exist yet, so walking into the lab breaks it.
+Everything below waits on that.
+
+## What's left
+
+| Who | What, in order | Plan |
 |---|---|---|
-| Santosh | below | The `fall` server kit, matching `game/public/fixtures/fall_case.json` |
-| Kushal | [game plan](docs/superpowers/plans/2026-10-31-midnight-fall-game.md) | Task 1: `?fixture` mode, then the case folder and `LabFall` |
-| Mounika | [content plan](docs/superpowers/plans/2026-10-31-midnight-fall-content.md) | Task 1: tighten the lines, due in 3 hours |
+| Kushal | 1. **`LabFall`** (the whole demo lives here) · 2. case-file fixes (10 min) · 3. restore + exit check · 4. cold open · 5. drag-to-present · 6. spoken replies (optional) | [game plan](docs/superpowers/plans/2026-10-31-midnight-fall-game.md), "Status and what's left" at the top |
+| Mounika | 1. final lines (if not sent yet) · 2. the before-play learning check · 3. **playtests** as soon as the lab plays · 4. demo script, Q&A sheet, deck | [content plan](docs/superpowers/plans/2026-10-31-midnight-fall-content.md) |
+| Santosh | first full run on the real server with Kushal's lab; rerun `server/warm.py` whenever the stage questions change; keep the server up for playtests | below |
 
-Santosh's list, in order:
-1. ~~`server/kits/fall.py` with tests; replies match the fixture exactly; 15-word reply cap.~~ Done.
+Santosh's list:
+1. ~~The `fall` kit, with tests; replies match the fixture; 15-word reply cap.~~ Done.
 2. ~~Gate the kit; demo seed 1000 must pass.~~ Done: 6/6, with-lab 100%, no-lab 17%.
-3. ~~Art: the manor courtyard, the two lab backdrops, three suspects, the sack and the sheet.~~ Done, in `game/public/assets/case10/`.
+3. ~~Art.~~ Done, in `game/public/assets/case10/`.
 4. ~~The thinking loop and stress, for the Observatory.~~ Done: live on `/trace`.
+5. ~~Warm cache for the stage questions (`server/warm.py`) and a `demo_lab` safety net.~~ Done.
+6. Full rehearsal on the real server once `LabFall` lands.
 
 ## Milestones (hours from now)
 

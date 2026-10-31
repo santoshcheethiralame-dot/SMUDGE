@@ -11,6 +11,9 @@
     html, body { margin: 0; height: 100%; background: #05060F; overflow: hidden; touch-action: none; }
     #game { position: fixed; inset: 0; }
     canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
+    /* Pixelify's 5 reads as 9: digits come from Silkscreen (but its wide 1 splits "10"), letters stay Pixelify */
+    @font-face { font-family: "Smudge Digits"; font-display: swap; unicode-range: U+0030, U+0032-0039;
+      src: url(https://fonts.gstatic.com/s/silkscreen/v6/m8JXjfVPf62XiF7kO-i9YLNlaw.woff2) format("woff2"); }
   </style>
 </head>
 <body>

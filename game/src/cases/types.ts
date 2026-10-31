@@ -46,6 +46,8 @@ export interface CaseDef {
   miss(ev: Evidence): string;
   stuck(ev: Evidence): string;
   confess: Record<string, { expr: string; text: string }[]>;
+  /** cross-examine as "point out the liar": one statement each, present by dropping the card on a suspect */
+  point?: { plaque(who: string): string; intro: string; miss(who: string): string };
   restore: {
     glyphs: string[]; sub: string; card: string; cardSub: string;
     /** optional: plays over the restored district, before the formula card */

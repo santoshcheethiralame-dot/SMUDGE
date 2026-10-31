@@ -29,7 +29,11 @@ step got Footnote's nudge), drag-to-present, strikethrough, restore, exit check.
 - **Stage rule:** tap nothing before beat 3. One stray chip ("The cry?") changes Varnish's memory, and the
   stage line then runs live (about 4 s, a different reply). If anyone touches the game before going on, reload.
 
-Kushal, small fixes in your scenes, in order:
+**Update (Oct 31, later): Santosh took items 1 and 3 below** as part of the stage cut
+([spec](docs/superpowers/specs/2026-10-31-stage-cut-design.md)): two drops with no dialogue over the tower, a
+one-move "point out the liar" cross-exam for this case, clear digits everywhere (Silkscreen digits; Pixelify drew
+5 like 9, which is why "4.5" read as "4.8", so item 2 was never a bug), and `?judges` needing one interview.
+Kushal, don't touch those; next for you is the backup video on the new build. The original list, for the record:
 1. **LabFall drop test:** Footnote's "Four times higher. Only twice as long!" box covers the big stopwatch at
    the exact moment it shows 2.00 s (the room-prediction punchline), and the box then eats the first click on the
    next balcony. Hide it before the next `pickBalcony`, or show it lower down.

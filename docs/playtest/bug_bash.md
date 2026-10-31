@@ -52,8 +52,8 @@ confusing or slow.
 
 1. **The right way:** follow `docs/DEMO_SCRIPT.md` beat by beat, like on stage.
 2. **Everything wrong:** put the waveform markers on the wrong sounds, pick every wrong prediction, type wrong
-   heights in the notebook three times, present the evidence on the wrong suspect and the wrong line, press
-   every statement, run Footnote's patience out. The game should never get stuck.
+   heights in the notebook three times, drop the evidence on the wrong suspects until
+   Footnote's patience runs out. The game should never get stuck.
 3. **Odd screens:** play at a small window (about 1280×720, like a projector), full-screen at 1920×1080 (F11),
    and on your phone. Try `?fixture` mode too.
 
@@ -61,8 +61,8 @@ confusing or slow.
 - **Title:** where it happens + what's wrong, e.g. "Notebook: Check button does nothing after 3 wrong answers".
 - **Body:** what you did (the steps), what happened, what you expected, and a screenshot (Win+Shift+S, then paste).
 
-Already known, don't report these again: Footnote's box covering the stopwatch in the drop test, "push lands
-4.8 m", and the touching Lady Varnish/Pendle tabs in the cross-exam.
+Changed on Oct 31 (pull first): two drops instead of three, a new one-move cross-exam (drag the evidence onto
+the liar), and clearer numbers. Test those hardest.
 
 ## When you're done
 

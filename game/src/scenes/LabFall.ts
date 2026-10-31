@@ -1,11 +1,13 @@
 // The Midnight Fall's lab, in four steps (spec §4 beats 4-7):
 //  1. the recording: drag two markers onto the cry and the thud on the gramophone's waveform. Δt is the fall time.
-//  2. the drop test: drop a sack from each balcony, with a stopwatch and a strobe trail; predict the top drop first.
+//  2. the drop test: drop a sack from the lowest balcony, predict the top, drop it. Stopwatch and strobe trail.
+//     (No gallery drop: its 1.5 s would hand over the answer before the notebook.)
 //  3. slip or push: two sacks leave the same balcony at once, one slipping, one pushed. Same landing time.
+//     Skipped under ?judges.
 //  4. the notebook: h = ½ × g × t², checked by the server.
 // Drawn over lab_tower / lab_gramophone at full opacity; every coordinate comes from fall_layout.json. Registered by cases/fall/index.ts.
 import Phaser from "phaser";
-import { W, H, Z, FONT, DISPLAY } from "../consts";
+import { W, H, Z, FONT, DISPLAY, JUDGES } from "../consts";
 import { Dialogue } from "../systems/dialogue";
 import { makePixel, wait, tween } from "../systems/fx";
 import { overlay } from "../systems/ui";
@@ -51,7 +53,7 @@ export class LabFall extends Phaser.Scene {
     this.dlg = new Dialogue(this);
     await this.recording();
     await this.dropTest();
-    await this.slipOrPush();
+    if (!JUDGES) await this.slipOrPush();
     const r = await this.notebook();
     await this.evidenceCard(r);
     progress.labDone = true;
@@ -211,7 +213,7 @@ export class LabFall extends Phaser.Scene {
     const watch = this.label(PX, 44, "0.00 s", 16, "#FFFFFF").setFontFamily(DISPLAY);
     this.label(PX, 76, "balcony       height   time", 8, "#9AA6C8");
     const bs = this.balconies();
-    const order = [bs[0], bs[bs.length - 1], ...bs.slice(1, -1)];       // lowest, then the top, then the middle
+    const order = [bs[0], bs[bs.length - 1]];       // lowest, then the top: four times the height, twice the time
     let row = 0;
     for (const b of order) {
       let guess = 0;
@@ -221,9 +223,10 @@ export class LabFall extends Phaser.Scene {
       const t = await this.launch([{ vx: 0, h: b.h }], true, watch);
       this.label(PX, 88 + row++ * 12, `${b.name.padEnd(12)} ${b.h.toFixed(1).padStart(4)} m   ${t.toFixed(1)} s`, 9);
       if (guess) {
-        const v = this.label(PX, 130, `You said ${guess} s. It took ${t.toFixed(1)} s.`, 9, "#FAC775");
+        const v = this.label(PX, 126, `You said ${guess} s. It took ${t.toFixed(1)} s.`, 9, "#FAC775").setWordWrapWidth(140);
         this.tweens.add({ targets: v, scale: { from: 1.3, to: 1 }, duration: 300, ease: "Back.easeOut" });
-        void this.dlg.say({ who: "foot", expr: "surprised", text: "*Four times higher. Only twice as long!" });
+        // in the panel, not a dialogue box: a box would cover the stopwatch and the clock-room balcony
+        this.label(PX, 154, "Four times higher. Only twice as long!", 9, "#FFFFFF").setWordWrapWidth(140);
       }
       await wait(this, 700);
     }
@@ -254,14 +257,14 @@ export class LabFall extends Phaser.Scene {
     this.drawTower("SLIP OR PUSH? · pick any balcony");
     const out = Number((api.current?.landing as { from_wall?: number } | undefined)?.from_wall) || T.outline.metres;
     this.label(PX, 40, "pale: slips off, 0.5 m/s\nred: pushed, 3 m/s", 9);
-    void this.dlg.say({ who: "smudge", expr: "determined", text: "Pushed or dropped, they land together." });
+    this.label(PX, 64, "Pushed or dropped, they land together.", 9, "#FFFFFF").setWordWrapWidth(140);
     const b = await this.pickBalcony([]);
     const t = await this.launch([{ vx: 0.5, h: b.h }, { vx: 3, h: b.h, tint: 0xff7a6a }], false);
     const same = this.label(PX + 70, 100, "SAME TIME", 20, "#FAC775").setFontFamily(DISPLAY).setOrigin(0.5);
     this.tweens.add({ targets: same, scale: { from: 0.3, to: 1 }, duration: 300, ease: "Back.easeOut" });
     const pushed = 3 * Math.sqrt((2 * b.h) / 9.8);   // exact fall time, not frame-timed t
     this.label(PX, 124, `slip lands ${(0.5 * Math.sqrt((2 * b.h) / 9.8)).toFixed(1)} m out\npush lands ${pushed.toFixed(1)} m out`, 9);
-    if (Math.abs(pushed - out) < 0.4) void this.dlg.say({ who: "foot", expr: "worried", text: "*The push lands on the outline." });
+    if (Math.abs(pushed - out) < 0.4) this.label(PX, 150, "The push lands on the outline.", 9, "#FAC775");
     await this.next();
     this.dlg.hide();
     this.clear();
@@ -273,7 +276,7 @@ export class LabFall extends Phaser.Scene {
     return new Promise((resolve) => {
       const form = document.createElement("form");
       form.setAttribute("aria-label", "Notebook");
-      form.style.cssText = `font-family:"Pixelify Sans",monospace;background:#F2E9CF;border:2px solid #0E1938;border-radius:4px;
+      form.style.cssText = `font-family:"Smudge Digits","Pixelify Sans",monospace;background:#F2E9CF;border:2px solid #0E1938;border-radius:4px;
         padding:8px 10px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;color:#0E1938;
         background-image:repeating-linear-gradient(#F2E9CF 0 15px,#9cb8dc 15px 16px);`;
       const box = (id: string, value = "", readonly = false) =>

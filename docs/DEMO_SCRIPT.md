@@ -52,7 +52,7 @@ case). Check the lab shows Δt = 1.50 s on first run; if not, check the URL has 
 | 7 | 2:10 | Lab: waveform, drag markers on cry + thud | "Talk can't solve it. The gramophone can: 1.5 seconds." | undock (`` ` `` twice) |
 | 8 | 2:40 | Drop test: drop from the lowest balcony (1.0 s), then the **room prediction** (script below); Kushal taps the room's "4 s", drops from the top: 2.0 s | **Mounika**, the prediction script below | closed |
 | 9 | 3:20 | Notebook: h = ½ × 9.8 × 1.5². Show a wrong step get Footnote's nudge once | "Footnote coaches, never gives the answer." | closed |
-| 10 | 3:50 | Drag evidence onto Varnish's "never came out on my balcony": HOLD IT, STRIKETHROUGH | "Evidence beats testimony." | closed |
+| 10 | 3:50 | Drag the evidence card onto Lady Varnish (her plaque: Gallery 11.0 m), or tap her: HOLD IT, STRIKETHROUGH | "Evidence beats testimony." | closed |
 | 11 | 4:10 | Restore: ghost becomes a bedsheet, "No ghost. Just gravity." Exit check, 2 taps | "Two questions to prove they learned it." | closed |
 | 12 | 4:30 | Slide: the gate (detective right 17% without the lab, 100% with it). Playtest numbers only if real ones exist by then | "A detective agent fails without the lab and wins with it, so every case is provably solvable by science only." | n/a |
 
@@ -64,7 +64,9 @@ case). Check the lab shows Δt = 1.50 s on first run; if not, check the URL has 
 > linear world. Now watch the stopwatch." *(Kushal drops.)* "Two seconds, not four. To double the time you need four
 > times the drop."
 
-Cut order if short on time: exit check, slip/push toggle, cold-open animation, drag-to-present. **Never cut:**
+`?judges` is the stage cut: one interview (Varnish) opens the stage and slip-or-push is skipped, so the run
+is cold open → Varnish → lab (waveform, two drops, notebook) → point out the liar → restore, about 5 minutes.
+Cut order if still short on time: exit check, cold-open animation. **Never cut:**
 the prediction moment, the strobe trail, the waveform, the docked Observatory during the interrogation.
 Dock at beat 4, not earlier: judges should see the reply *and* the reasoning arrive together.
 

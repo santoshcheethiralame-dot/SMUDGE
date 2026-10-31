@@ -8,6 +8,7 @@ import { ColdOpen, coldOpenDone } from "../../scenes/ColdOpen";
 import { LabFall } from "../../scenes/LabFall";
 import { ghostReveal, exitCheck } from "./finale";
 import { FALL, World3 } from "./layout";
+import { api } from "../../api";
 
 // Where things are in the art comes from fall_layout.json (world [x, y, z], run through the district's project()).
 const LAB = FALL.district;
@@ -18,6 +19,9 @@ const CLUES: { id: string; tag: string; at: World3; w: number; h: number; note: 
   { id: "gramophone", tag: "RECORDER", at: LAB.clues.gramophone as World3, w: 40, h: 36, note: "It recorded all night." },
   { id: "tower", tag: "TOWER", at: LAB.clues.tower as World3, w: 90, h: 120, note: "Three balconies. Three heights." },
 ];
+
+const ROOM: Record<string, string> = { rivet: "Armoury", varnish: "Gallery", pendle: "Clock room" };
+const metres = (who: string) => ((api.current?.balconies as Record<string, number> | undefined)?.[who] ?? 0).toFixed(1);
 
 /** Clues found this visit, kept across the lab and back. Cleared by a fresh page load. */
 const found = new Set<string>();
@@ -44,8 +48,7 @@ const CASE: CaseDef = {
   // the early wrong guess (a nervous Pendle on the top floor looks guilty), then Footnote's "check it" and the way to check
   afterFirst: [
     { who: "smudge", expr: "determined", text: "Pendle's nervous, and his room is highest. It's him!" },
-    { who: "foot", expr: "neutral", text: "Check it. A hunch isn't evidence." },
-    { who: "foot", expr: "worried", text: "Talk won't crack them. Use the lab." },
+    { who: "foot", expr: "neutral", text: "A hunch isn't evidence. The lab will tell us." },
   ],
   toLab: { who: "smudge", expr: "determined", text: "The gramophone caught every sound." },
   afterLab: { who: "foot", expr: "happy", text: "Now we know the balcony." },
@@ -58,6 +61,12 @@ const CASE: CaseDef = {
     rivet: [{ expr: "shocked", text: "...My balcony. A slip. I never meant it." }],
     varnish: [{ expr: "shocked", text: "...Eleven metres. Oh, darling. You measured." }],
     pendle: [{ expr: "shocked", text: "...Nineteen metres. I... confess." }],
+  },
+  // every suspect swears the same oath, so the cross-exam is one move: whose balcony matches the fall?
+  point: {
+    plaque: (who) => `${ROOM[who]}\n${metres(who)} m`,
+    intro: "Whose balcony is that high? Drag the evidence onto them.",
+    miss: (who) => `*The ${ROOM[who].toLowerCase()} is ${metres(who)} m. Check your evidence.`,
   },
   restore: { glyphs: ["h", " ", "=", " ", "½", "g", "t", "²"], sub: "The law of falling bodies is back in the book.",
     card: "h = ½gt²", cardSub: "Motion · Gravitation", reveal: ghostReveal, after: exitCheck },

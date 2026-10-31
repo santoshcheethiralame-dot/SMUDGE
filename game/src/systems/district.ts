@@ -2,7 +2,7 @@
 // and the call to the stage. One scene serves every case: the layout, scenery and lines come from the case's
 // folder in src/cases, the facts from the server's case. Start it with { kit, from }.
 import Phaser from "phaser";
-import { W, FONT, DISPLAY, FEET_ORIGIN, project, dirFromVector, Dir } from "../consts";
+import { W, FONT, DISPLAY, FEET_ORIGIN, JUDGES, project, dirFromVector, Dir } from "../consts";
 import { Dialogue, Who } from "./dialogue";
 import { makeGlow, makePixel, wait, pageReveal, tween } from "./fx";
 import { askBox } from "./ui";
@@ -173,17 +173,20 @@ export class District extends Phaser.Scene {
 
   /** 0 on arrival, +1 for the inspection, the lab and questioning everyone: the theme grows with the case. */
   private progressLayer() {
-    return (progress.inspected ? 1 : 0) + (progress.labDone ? 1 : 0) + (progress.questioned.size >= 3 ? 1 : 0);
+    return (progress.inspected ? 1 : 0) + (progress.labDone ? 1 : 0) + (progress.questioned.size >= this.need() ? 1 : 0);
   }
+
+  /** statements needed before the stage: all three, or one in the ?judges stage cut */
+  private need() { return JUDGES ? 1 : 3; }
 
   private refreshChecklist(celebrate = true) {
     const q = progress.questioned;
     const tick = (b: boolean) => (b ? "☑" : "☐");
-    const marks = [progress.inspected, progress.labDone, q.size >= 3, progress.solved].map((b) => (b ? "1" : "0")).join("");
+    const marks = [progress.inspected, progress.labDone, q.size >= this.need(), progress.solved].map((b) => (b ? "1" : "0")).join("");
     this.checklist.setText([
       `${tick(progress.inspected)} ${this.content.checklist[0]}`,
       `${tick(progress.labDone)} ${this.content.checklist[1]}`,
-      `${tick(q.size >= 3)} Question all three (${q.size}/3)`,
+      `${tick(q.size >= this.need())} ${this.need() === 1 ? "Question a suspect" : "Question all three"} (${q.size}/${this.need()})`,
       `${tick(progress.solved)} Call everyone to the stage`,
     ].join("\n"));
     if (celebrate && this.ticks && marks !== this.ticks && marks.split("1").length > this.ticks.split("1").length) {
@@ -352,7 +355,7 @@ export class District extends Phaser.Scene {
     this.busy = true;
     const next = !progress.inspected ? `Look at ${this.content.stageLabel.toLowerCase()}: walk up to it and press E, or tap it.`
       : !progress.labDone ? `${this.content.stageLabel} again: the lab's waiting.`
-        : progress.questioned.size < 3 ? `We still need ${3 - progress.questioned.size} more statement${progress.questioned.size === 2 ? "" : "s"}. Talk to everyone.`
+        : progress.questioned.size < this.need() ? `We still need ${this.need() - progress.questioned.size} more statement${this.need() - progress.questioned.size === 1 ? "" : "s"}. Talk to everyone.`
           : `Everyone's on record. Back to ${this.content.stageLabel.toLowerCase()}, and call them to the stage!`;
     await this.dlg.play([{ who: "foot", expr: "neutral", text: `Psst, Smudge. ${next}` }]);
     this.busy = false;
@@ -433,8 +436,8 @@ export class District extends Phaser.Scene {
       return;
     }
     this.focusX = null;
-    if (progress.questioned.size < 3) {
-      await this.dlg.play([{ who: "foot", expr: "neutral", text: `You've got your evidence. Question everyone first, so we have their statements on record. (${progress.questioned.size}/3)` }]);
+    if (progress.questioned.size < this.need()) {
+      await this.dlg.play([{ who: "foot", expr: "neutral", text: `You've got your evidence. Question everyone first, so we have their statements on record. (${progress.questioned.size}/${this.need()})` }]);
       return;
     }
     const names = Object.values(api.current!.suspects).map((s) => s.name);

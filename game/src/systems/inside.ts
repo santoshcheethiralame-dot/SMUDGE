@@ -36,18 +36,18 @@ const CSS = `
 #inside.docked{width:min(440px,36vw);box-shadow:none}
 #inside header{padding:14px 18px 8px;border-bottom:1px solid var(--rule)}
 #inside h2{font:400 24px/1.1 "Lilita One","Trebuchet MS",sans-serif;margin:0}
-#inside .eyebrow{font:600 11px/1.2 "Pixelify Sans",monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--foot)}
+#inside .eyebrow{font:600 11px/1.2 "Smudge Digits","Pixelify Sans",monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--foot)}
 #inside nav{display:flex;gap:6px;padding:8px 18px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
-#inside nav button,#inside .act{font:600 13px/1 "Pixelify Sans",monospace;padding:7px 11px;border-radius:3px;border:1.5px solid var(--soft);
+#inside nav button,#inside .act{font:600 13px/1 "Smudge Digits","Pixelify Sans",monospace;padding:7px 11px;border-radius:3px;border:1.5px solid var(--soft);
   background:transparent;color:var(--ink);cursor:pointer}
 #inside nav button[aria-selected=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 #inside .act{border-color:var(--pen);color:#fff;background:#C9302A}
 #inside button:focus-visible{outline:3px solid var(--foot);outline-offset:2px}
 #inside .body{overflow:auto;padding:14px 18px 28px;display:grid;gap:14px;align-content:start}
 #inside .card{background:var(--card);border:1px solid var(--rule);border-radius:4px;padding:12px 14px;display:grid;gap:8px;min-width:0}
-#inside h3{margin:0;font:600 13px/1.2 "Pixelify Sans",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--soft)}
+#inside h3{margin:0;font:600 13px/1.2 "Smudge Digits","Pixelify Sans",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--soft)}
 #inside .big{font:400 20px/1.2 "Lilita One","Trebuchet MS",sans-serif}
-#inside .tag{display:inline-block;font:600 11px/1 "Pixelify Sans",monospace;padding:3px 6px;border-radius:2px;border:1px solid var(--soft);color:var(--soft);margin-right:4px}
+#inside .tag{display:inline-block;font:600 11px/1 "Smudge Digits","Pixelify Sans",monospace;padding:3px 6px;border-radius:2px;border:1px solid var(--soft);color:var(--soft);margin-right:4px}
 #inside .tag.red{border-color:var(--pen);color:var(--pen)} #inside .tag.ok{border-color:var(--ok);color:var(--ok)} #inside .tag.gold{border-color:var(--gold);color:var(--gold)}
 #inside ul{margin:0;padding-left:1.1em;display:grid;gap:3px}
 #inside .secret{border:1.5px solid var(--pen);background:rgba(240,90,76,.1);padding:8px 10px;border-radius:3px}
@@ -58,9 +58,9 @@ const CSS = `
 #inside .reply{border-top:1px solid var(--rule);padding-top:8px;display:grid;gap:3px}
 #inside .muted{color:var(--soft)} #inside table{border-collapse:collapse;width:100%;font-size:13px}
 #inside td,#inside th{text-align:left;padding:5px 6px;border-bottom:1px solid var(--rule);vertical-align:top}
-#inside th{font:600 11px/1 "Pixelify Sans",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--soft)}
+#inside th{font:600 11px/1 "Smudge Digits","Pixelify Sans",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--soft)}
 #inside-open{position:fixed;left:max(10px,env(safe-area-inset-left,0px));bottom:max(10px,env(safe-area-inset-bottom,0px));z-index:49;
-  font:600 13px/1 "Pixelify Sans",monospace;padding:8px 12px;border-radius:3px;border:2px solid #C9302A;background:#0B1026;color:#EDE4C8;cursor:pointer}
+  font:600 13px/1 "Smudge Digits","Pixelify Sans",monospace;padding:8px 12px;border-radius:3px;border:2px solid #C9302A;background:#0B1026;color:#EDE4C8;cursor:pointer}
 `;
 
 export function installInside(game: Phaser.Game) {

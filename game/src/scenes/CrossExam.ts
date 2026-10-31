@@ -19,6 +19,8 @@ export class CrossExam extends Phaser.Scene {
   private sel = { who: "", idx: 0 };
   private rows: Phaser.GameObjects.Text[] = [];
   private tabs: Record<string, Phaser.GameObjects.Text> = {};
+  /** point mode: each suspect's one statement, in a bubble over their head */
+  private bubbles: Record<string, Phaser.GameObjects.Text> = {};
   private sprites: Record<string, Phaser.GameObjects.Sprite> = {};
   private patience = 3;
   private stars: Phaser.GameObjects.Container[] = [];
@@ -32,8 +34,11 @@ export class CrossExam extends Phaser.Scene {
     this.busy = true;
     this.patience = 3;
     this.content = CASES[progress.kit];
+    const point = this.content.point;
     this.order = Object.keys(api.current!.suspects);
     this.rows = [];
+    this.tabs = {};
+    this.bubbles = {};
     this.stars = [];
     this.sel = { who: "", idx: 0 };
     makeGlow(this, "glow64", 64);
@@ -76,14 +81,27 @@ export class CrossExam extends Phaser.Scene {
     const rowAt = (p: Phaser.Input.Pointer) =>
       this.rows.findIndex((r) => r.text.trim() && Math.abs(p.worldY - r.getBounds().centerY) <= 6 && p.worldX > 8 && p.worldX < W - 8);
     const tint = (over: number) => this.rows.forEach((r, k) => r.setColor(k === over ? "#2E5CAD" : k === this.sel.idx ? "#C9302A" : "#0E1938"));
+    // point mode: the card lands on a suspect instead, and presents against their one statement
+    const whoAt = (p: Phaser.Input.Pointer) =>
+      this.order.find((_, i) => Math.abs(p.worldX - SPOT_X[i]) < 30 && p.worldY > 120 && p.worldY < 200);
+    const lit = (who?: string) => this.order.forEach((k) => (k === who ? this.sprites[k].setTint(0xfac775) : this.sprites[k].clearTint()));
     this.badge.on("drag", (p: Phaser.Input.Pointer, x: number, y: number) => {
       if (this.busy) return;
       this.badge.setPosition(x, y).setDepth(950);
-      tint(rowAt(p));
+      if (point) lit(whoAt(p));
+      else tint(rowAt(p));
     });
     this.badge.on("dragend", (p: Phaser.Input.Pointer) => {
-      const i = this.busy ? -1 : rowAt(p);
       this.badge.setPosition(home.x, home.y).setDepth(0);
+      if (point) {
+        const who = this.busy ? undefined : whoAt(p);
+        lit();
+        if (!who) return;
+        this.pick(who, 0, true);
+        void this.present();
+        return;
+      }
+      const i = this.busy ? -1 : rowAt(p);
       tint(-1);
       if (i < 0) return;
       this.pick(this.sel.who, i, true);
@@ -98,6 +116,22 @@ export class CrossExam extends Phaser.Scene {
     pg.fillStyle(0xf2e9cf, 1).fillRect(8, 196, W - 16, 68);
     pg.lineStyle(2, 0x0e1938, 1).strokeRect(8, 196, W - 16, 68);
     panel.add(pg);
+    if (point) {
+      // no panel: a plaque under each spotlight, the oath over each head, and the suspect itself is the target
+      pg.clear();
+      this.order.forEach((who, i) => {
+        this.add.text(SPOT_X[i], 186, point.plaque(who), { fontFamily: FONT, fontSize: "9px", color: "#0E1938", backgroundColor: "#FAC775", align: "center" })
+          .setPadding(4, 1, 4, 1).setOrigin(0.5, 0);
+        this.bubbles[who] = this.add.text(SPOT_X[i], 128, api.current!.statements[who][0].text, {
+          fontFamily: FONT, fontSize: "8px", color: "#0E1938", backgroundColor: "#F2E9CF", align: "center", wordWrap: { width: 70 },
+        }).setPadding(3, 2, 3, 2).setOrigin(0.5, 1).setAlpha(0).setDepth(5);
+        this.sprites[who].setInteractive({ useHandCursor: true }).on("pointerdown", () => {
+          if (this.busy) return;
+          this.pick(who, 0, true);
+          void this.present();
+        });
+      });
+    } else {
     let tx = 16;
     this.order.forEach((who) => {
       const t = this.add.text(tx, 199, api.current!.suspects[who].name, { fontFamily: FONT, fontSize: "9px", color: "#F2E9CF", backgroundColor: "#0E1938" })
@@ -127,6 +161,7 @@ export class CrossExam extends Phaser.Scene {
     };
     btn(W - 168, "Press", "#2E5CAD", () => this.press());
     btn(W - 112, "Present evidence", "#C9302A", () => this.present());
+    }
     this.pick(this.order[0], 0, true);
 
     // the entrance: lights thunk on one by one, each suspect drops into its spot, the banner slams across
@@ -146,12 +181,13 @@ export class CrossExam extends Phaser.Scene {
     await this.banner("CROSS-EXAMINATION");
     this.tweens.add({ targets: panel, y: 0, duration: 320, ease: "Back.easeOut" });
     this.tweens.add({ targets: this.badge, alpha: 1, duration: 300 });
+    if (point) this.tweens.add({ targets: Object.values(this.bubbles), alpha: 1, duration: 300 });
     sfx("open");
     this.pick(this.sel.who, this.sel.idx, true);
     await wait(this, 320);
 
     this.dlg = new Dialogue(this);
-    await this.dlg.play([
+    await this.dlg.play(point ? [{ who: "foot", expr: "neutral", text: point.intro }] : [
       { who: "foot", expr: "neutral", text: "Cross-examination! Pick a suspect, pick a statement. PRESS it to dig deeper." },
       { who: "foot", expr: "worried", text: "When a statement can't be true because of your evidence, PRESENT the evidence, or drag the card onto it. But my patience has limits." },
     ]);
@@ -220,8 +256,8 @@ export class CrossExam extends Phaser.Scene {
       r.setText(`${i === idx ? "▸" : "  "} ${st[i]?.text ?? ""}`);
       r.setColor(i === idx ? "#C9302A" : "#0E1938");
     });
-    for (const k of this.order) this.tabs[k].setBackgroundColor(k === who ? "#C9302A" : "#0E1938");
-    if (this.sprites[who].alpha > 0) for (const k of this.order) this.tweens.add({ targets: this.sprites[k], alpha: k === who ? 1 : 0.5, duration: 160 });
+    for (const k of this.order) this.tabs[k]?.setBackgroundColor(k === who ? "#C9302A" : "#0E1938");
+    if (!this.content.point && this.sprites[who].alpha > 0) for (const k of this.order) this.tweens.add({ targets: this.sprites[k], alpha: k === who ? 1 : 0.5, duration: 160 });
     if (changed && !quiet) { sfx("select"); hop(this, this.sprites[who], 5, 120); }
   }
 
@@ -270,8 +306,10 @@ export class CrossExam extends Phaser.Scene {
     const st = api.current!.statements[who][idx];
     const ev = this.evidence();
     await this.holdIt();
-    await this.dlg.say({ who: "smudge", expr: "determined", text: ev.say });
+    // ev.say names the culprit, so in point mode it is only said once the right suspect is hit
+    if (!this.content.point) await this.dlg.say({ who: "smudge", expr: "determined", text: ev.say });
     const r = await api.present(st.id, ev.label);
+    if (r.hit && this.content.point) await this.dlg.say({ who: "smudge", expr: "determined", text: ev.say });
     if (r.hit) {
       await this.strikethrough(who, idx);
       return;
@@ -287,7 +325,7 @@ export class CrossExam extends Phaser.Scene {
     if (r.close) {
       await this.dlg.say({ who: "foot", expr: "worried", text: "*Right suspect, wrong line. Which of their statements does your evidence make impossible?" });
     } else if (this.patience > 0) {
-      await this.dlg.say({ who: "foot", expr: "worried", text: this.content.miss(ev) });
+      await this.dlg.say({ who: "foot", expr: "worried", text: this.content.point?.miss(who) ?? this.content.miss(ev) });
     } else {
       await this.dlg.say({ who: "foot", expr: "worried", text: this.content.stuck(ev) });
       this.patience = 1;
@@ -298,13 +336,14 @@ export class CrossExam extends Phaser.Scene {
   }
 
   private async strikethrough(who: string, idx: number) {
-    const row = this.rows[idx];
+    const row = this.content.point ? this.bubbles[who] : this.rows[idx];
     music("off");
     sfx("strike");
     this.smudge.play("strikethrough_E");
-    // red pen slash across the lie
+    // red pen slash across the lie (a bubble in point mode is centred on its spotlight, so use its bounds)
     const slash = this.add.graphics().setDepth(900);
-    const y = row.y + 6, x0 = row.x, x1 = row.x + row.width + 4;
+    const b = this.content.point ? row.getBounds() : null;
+    const y = b ? b.centerY : row.y + 6, x0 = b ? b.x : row.x, x1 = b ? b.right : row.x + row.width + 4;
     await tween(this, {
       targets: { t: 0 }, t: 1, duration: 260, ease: "Cubic.easeOut",
       onUpdate: (tw: Phaser.Tweens.Tween) => {

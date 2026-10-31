@@ -72,6 +72,21 @@ Cut order if still short on time: exit check, cold-open animation. **Never cut:*
 the prediction moment, the strobe trail, the waveform, the docked Observatory during the interrogation.
 Dock at beat 4, not earlier: judges should see the reply *and* the reasoning arrive together.
 
+## 2b. Author a case (review 2 add-on, about 1 min)
+
+Open `http://localhost:8872/?scene=Map&author` (or the red **✎ Author a case** button on the casebook map). Type a
+line such as `Class 9, pressure: P = F/A` and press **Write it**. Five lanes fill in: Designer (model writes the
+case), Solver (code plays 200 seeds), Critic (model checks physics and safety), Casting (code picks a built
+district and cast), Gate (detective agent, 2 seeds, without and with the lab). Problems that sent a design back
+show in the feed below; that is the story to point at ("code caught messy numbers, the model fixed them").
+**Play it** opens the new case on the borrowed district, with a notebook lab and the usual cross-exam.
+
+- Time: 40 s to about 2 min live, depending on rounds. A prompt that was run before is cached and takes a few seconds.
+- The server must be restarted after pulling (`/api/author` is new). No model reachable: the Designer falls back to
+  a golden spec (pressure or speed), marked "golden spec" in its lane.
+- Authored cases are saved in `server/kits/generated/` and load at start; delete a file to drop a case.
+- Say: "The model writes, code proves, a detective agent gates. Nothing the model writes reaches a student unproven."
+
 ## 3. Recording checklist (backup video, at feature freeze)
 
 - [ ] Fresh Chrome profile or Guest window; **no extensions**, bookmarks bar hidden, notifications off (Windows Focus Assist: Alarms only).

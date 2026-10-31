@@ -147,7 +147,7 @@ export class LabFall extends Phaser.Scene {
     });
     const show = () => readout.setText(`Δt = ${Math.abs(marks[1].t - marks[0].t).toFixed(2)} s`);
     show();
-    void this.dlg.say({ who: "foot", expr: "neutral", text: "*The cry, then the thud. Time between them?" });
+    void this.dlg.say({ who: "foot", expr: "neutral", text: "*Find the cry and the thud." });
     return new Promise((resolve) => {
       this.button(W / 2, 252, "Lock in Δt", () => {
         const [a, b] = [Math.min(marks[0].t, marks[1].t), Math.max(marks[0].t, marks[1].t)];
@@ -253,6 +253,7 @@ export class LabFall extends Phaser.Scene {
     this.drawTower("SLIP OR PUSH? · pick any balcony");
     const out = Number((api.current?.landing as { from_wall?: number } | undefined)?.from_wall) || T.outline.metres;
     this.label(PX, 40, "pale: slips off, 0.5 m/s\nred: pushed, 3 m/s", 9);
+    void this.dlg.say({ who: "smudge", expr: "determined", text: "Pushed or dropped, they land together." });
     const b = await this.pickBalcony([]);
     const t = await this.launch([{ vx: 0.5, h: b.h }, { vx: 3, h: b.h, tint: 0xff7a6a }], false);
     const same = this.label(PX + 70, 100, "SAME TIME", 20, "#FAC775").setFontFamily(DISPLAY).setOrigin(0.5);

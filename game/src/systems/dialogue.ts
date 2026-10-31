@@ -23,6 +23,18 @@ const nameOf = (who: string) => NAMES[who] ?? api.current?.suspects[who]?.name ?
 const BOX = { x: 8, y: 6, w: W - 16, h: 74 };
 const TEXT_X = 110;
 
+/** Split on sentence ends so no page runs past `max` characters (a single long sentence stays whole). */
+export function paginate(text: string, max = 110): string[] {
+  const sentences = text.match(/[^.!?…]+[.!?…]*\s*/g)?.map((x) => x.trim()).filter(Boolean) ?? [text];
+  const pages: string[] = [];
+  for (const sent of sentences) {
+    const last = pages.length - 1;
+    if (last >= 0 && pages[last].length + 1 + sent.length <= max) pages[last] += " " + sent;
+    else pages.push(sent);
+  }
+  return pages.length ? pages : [text];
+}
+
 export class Dialogue {
   private scene: Phaser.Scene;
   private root: Phaser.GameObjects.Container;
@@ -105,7 +117,14 @@ export class Dialogue {
   /** Fast-forwarding: the button has been held a moment, not just tapped. */
   private get rushing() { return this.held && this.scene.time.now - this.heldSince > 280; }
 
+  /** A long line is shown a page at a time; the red ▼ is the "more" click. A page is about two sentences or 110 characters. */
   say(line: Line): Promise<void> {
+    const pages = paginate(line.text);
+    if (pages.length < 2) return this.sayPage(line);
+    return (async () => { for (const text of pages) await this.sayPage({ ...line, text }); })();
+  }
+
+  private sayPage(line: Line): Promise<void> {
     const opening = !this.root.visible || this.root.alpha < 0.5;
     this.active = true;
     this.who = line.who;

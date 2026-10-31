@@ -406,6 +406,9 @@ export class District extends Phaser.Scene {
       sp?.play(`${who}_idle_S`, true);
       progress.transcript.push({ who, q, a: r.answer });
     }
+    if (progress.questioned.size === 1 && !progress.labDone && this.content.afterFirst) {
+      await this.dlg.play(this.content.afterFirst);
+    }
     this.dlg.hide();
     this.focusX = null;
   }

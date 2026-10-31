@@ -401,13 +401,8 @@ export class District extends Phaser.Scene {
       sp?.play(`${who}_talk_S`, true);
       const r = await api.ask(who, q);
       const spoken = speak(who, r.answer);
-      // display only: a long reply shows as one short line, and a click reveals the rest (speech and transcript keep the full text)
-      const expr = /nothing|none|never|wasn't|not me/i.test(r.answer) ? "smug" : "neutral";
-      const cut = r.answer.match(/^.{20,110}?[.!?](\s|$)/)?.[0].trim();
-      if (cut && cut.length < r.answer.trim().length - 12) {
-        await this.dlg.say({ who: who as Who, expr, text: `${cut} (more)` });
-        await this.dlg.say({ who: who as Who, expr, text: r.answer.trim().slice(cut.length).trim() });
-      } else await this.dlg.say({ who: who as Who, expr, text: r.answer });
+      // long replies are paged by Dialogue.say, so speech and transcript keep the full text
+      await this.dlg.say({ who: who as Who, expr: /nothing|none|never|wasn't|not me/i.test(r.answer) ? "smug" : "neutral", text: r.answer });
       await spoken;
       sp?.play(`${who}_idle_S`, true);
       progress.transcript.push({ who, q, a: r.answer });

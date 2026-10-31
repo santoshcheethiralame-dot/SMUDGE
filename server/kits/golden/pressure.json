@@ -1,0 +1,30 @@
+{
+  "id": "gen_pressure",
+  "title": "The Cracked Showroom",
+  "chapter": "Chapter 12: Pressure",
+  "law": "Pressure",
+  "formula": "P = F / A",
+  "out": {"sym": "P", "name": "pressure", "unit": "Pa"},
+  "ins": [
+    {"sym": "F", "name": "weight", "unit": "N", "values": [600, 900, 1200, 1800]},
+    {"sym": "A", "name": "base area", "unit": "m²", "values": [0.5, 1, 2, 3]}
+  ],
+  "thing": "crate",
+  "item": "glass floor",
+  "crime": "Last night someone dragged a crate across the showroom's new glass floor and cracked it. Every crate owner gave the clerk their crate's pressure, and one of them lied.",
+  "deed": "you dragged your crate across the glass floor last night and cracked it, then gave the clerk a false pressure.",
+  "oath": "My crate presses on the floor at {value} {unit}. Write it down.",
+  "measure": "The lab weighs each crate and measures the area of its base.",
+  "hint": "*Pressure is the force spread over the area: divide the weight by the base area.",
+  "arrive": [
+    "Watt Works, and the showroom's glass floor has a crack right across it. The Baron erased the law of pressure.",
+    "Three crate owners. Each one told the clerk how hard their crate presses on the floor.",
+    "Numbers can lie when people say them. Question them, then check the crates."
+  ],
+  "inspect": [
+    "A long scrape and a crack in the glass. Something heavy, on a small base.",
+    "Weigh the crates and measure their bases. The pressure tells on whoever lied."
+  ],
+  "confession": "Fine! My crate scraped the glass. The Baron said nobody could check a pressure without the law.",
+  "borrow": "power"
+}

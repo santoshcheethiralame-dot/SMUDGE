@@ -1,0 +1,30 @@
+{
+  "id": "gen_speed",
+  "title": "The Flattened Flowerbed",
+  "chapter": "Chapter 8: Speed",
+  "law": "Speed",
+  "formula": "v = d / t",
+  "out": {"sym": "v", "name": "average speed", "unit": "m/s"},
+  "ins": [
+    {"sym": "d", "name": "distance", "unit": "m", "values": [100, 200, 300, 400]},
+    {"sym": "t", "name": "time", "unit": "s", "values": [10, 20, 25, 50]}
+  ],
+  "thing": "rally lap",
+  "item": "flowerbed",
+  "crime": "During the Mesa Rally someone cut across the flowerbed and flattened it. Every racer told the marshal their lap's average speed, and one of them lied.",
+  "deed": "you cut across the flowerbed during the rally and flattened it, then told the marshal a false speed.",
+  "oath": "My rally lap averaged {value} {unit}. Check the board.",
+  "measure": "The lab reads each racer's distance and time off the timing log.",
+  "hint": "*Average speed is distance divided by time. Which number goes on top?",
+  "arrive": [
+    "Motion Mesa, and the flowerbed by the rally track is squashed flat. The Baron erased the law of speed.",
+    "Three racers. Each one told the marshal their lap's average speed.",
+    "Question them, then check the timing log."
+  ],
+  "inspect": [
+    "Tyre tracks straight through the flowers. Somebody took a shortcut.",
+    "The timing log has every lap's distance and time. Speed tells on whoever lied."
+  ],
+  "confession": "Okay, okay! I cut through the flowers. The Baron said speed couldn't be checked any more.",
+  "borrow": "motion"
+}

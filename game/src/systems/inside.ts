@@ -1,6 +1,6 @@
 // "Inside the case": a drawer for judges that shows the agents at work. It spoils the case (the culprit,
 // the secret, the lie), so players never see it: it opens with the ` key, or from a button when the page is
-// loaded with ?judges. The game pauses while it is open.
+// loaded with ?judges. The game pauses while it is open. Shift+` docks it beside the running game.
 import Phaser from "phaser";
 import { api } from "../api";
 import { FIXTURE, live, pollTrace, lanesHtml, feedHtml, detailHtml, obsKey, OBS_CSS } from "./observatory";
@@ -33,6 +33,7 @@ const CSS = `
   border-left:3px solid #C9302A;transform:translateX(102%);transition:transform .22s ease}
 #inside.open{transform:none}
 @media (prefers-reduced-motion:reduce){#inside{transition:none}}
+#inside.docked{width:min(440px,36vw);box-shadow:none}
 #inside header{padding:14px 18px 8px;border-bottom:1px solid var(--rule)}
 #inside h2{font:400 24px/1.1 "Lilita One","Trebuchet MS",sans-serif;margin:0}
 #inside .eyebrow{font:600 11px/1.2 "Pixelify Sans",monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--foot)}
@@ -74,6 +75,7 @@ export function installInside(game: Phaser.Game) {
   let tab: Tab = "Live";
   let timer = 0;
   let fast = 0;
+  let docked = false;
   let data: Inside | null = null;
   let note = "";
   let last = "";                         // what was last drawn: redraw only when something changed
@@ -198,10 +200,22 @@ export function installInside(game: Phaser.Game) {
     };
   }
 
-  function open() {
+  const gameDiv = document.getElementById("game")!;
+  // Docked: the panel sits on the right and the game keeps running in the space left of it (Phaser FIT refits).
+  function setDocked(on: boolean) {
+    docked = on;
+    el.classList.toggle("docked", on);          // class first, so the width below is the docked width
+    gameDiv.style.right = on ? `${Math.round(el.getBoundingClientRect().width)}px` : "0";
+    const refit = () => { game.scale.getParentBounds(); game.scale.refresh(); };
+    refit();
+    requestAnimationFrame(refit);               // Phaser reads the parent size a frame late
+    window.setTimeout(refit, 120);
+  }
+  function open(dock = false) {
     el.classList.add("open");
     el.setAttribute("aria-hidden", "false");
-    game.pause();
+    setDocked(dock);
+    if (!dock) game.pause();
     fetchData();
     timer = window.setInterval(fetchData, 2500);
     const tick = async () => {
@@ -218,20 +232,21 @@ export function installInside(game: Phaser.Game) {
     el.setAttribute("aria-hidden", "true");
     window.clearInterval(timer);
     window.clearInterval(fast);
-    game.resume();
+    if (docked) setDocked(false);
+    else game.resume();
   }
-  const toggle = () => (el.classList.contains("open") ? close() : open());
+  const toggle = (dock = false) => (el.classList.contains("open") ? close() : open(dock));
 
   window.addEventListener("keydown", (e) => {
-    if (e.key === "`") { e.preventDefault(); toggle(); }
+    if (e.code === "Backquote" || e.key === "`" || e.key === "~") { e.preventDefault(); toggle(e.shiftKey); }
     else if (e.key === "Escape" && el.classList.contains("open")) close();
   }, true);
   if (new URLSearchParams(location.search).has("judges")) {
     const b = document.createElement("button");
     b.id = "inside-open";
     b.type = "button";
-    b.textContent = "Inside the case ( ` )";
-    b.onclick = toggle;
+    b.textContent = "Observatory ( ` · ⇧ docks )";
+    b.onclick = () => toggle(true);
     document.body.appendChild(b);
   }
   render();

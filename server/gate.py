@@ -9,9 +9,12 @@ import os
 import sys
 from collections import Counter
 
-import kits
-from agents import Detective
-from truth import new_case, check_constraints
+# the gate measures the case, not the suspects' thinking: one call per reply keeps quota and the cache
+os.environ.setdefault("SMUDGE_THINK", "0")
+
+import kits  # noqa: E402
+from agents import Detective  # noqa: E402
+from truth import new_case, check_constraints  # noqa: E402
 
 n = int(sys.argv[1]) if len(sys.argv) > 1 else 9
 kit = kits.get(sys.argv[2] if len(sys.argv) > 2 else None)

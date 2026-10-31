@@ -77,15 +77,17 @@ def chat(messages, tier="fast", temperature=0.6, max_tokens=220, json_mode=False
         STATS["cache_hits"] += 1
         hit = json.loads(cached.read_text())
         if meta is not None:
-            meta.update(provider=hit.get("provider"), model=_model(hit.get("provider"), tier), cached=True, ms=0)
+            meta.update(provider=hit.get("provider"), model=_model(hit.get("provider"), tier), cached=True, ms=0,
+                        tokens=0, tier=tier)
         return hit["text"]
 
     deadline = time.time() + patience
     while True:
-        text, provider = _try_providers(body, tier, cached)
+        text, provider, tokens = _try_providers(body, tier, cached)
         if text is not None or time.time() >= deadline:
             if meta is not None:
-                meta.update(provider=provider, model=_model(provider, tier), cached=False, ms=round((time.time() - t0) * 1000))
+                meta.update(provider=provider, model=_model(provider, tier), cached=False,
+                            ms=round((time.time() - t0) * 1000), tokens=tokens, tier=tier)
             return text
         time.sleep(4.0)
 
@@ -124,12 +126,12 @@ def _try_providers(body, tier, cached):
             STATS["calls"] += 1
             STATS["by_provider"][p["name"]] = STATS["by_provider"].get(p["name"], 0) + 1
             cached.write_text(json.dumps({"text": text, "provider": p["name"]}))
-            return text, p["name"]
+            return text, p["name"], int((r.json().get("usage") or {}).get("total_tokens") or 0)
         except Exception:
             STATS["failures"] += 1
             _rest(p, tier, 5)
             continue
-    return None, None
+    return None, None, 0
 
 
 # the pixel font only has ASCII: fold typographic punctuation the models like to emit

@@ -6,12 +6,15 @@ Detective     release-gate player: tries to solve a case with or without the lab
 
 Nothing here is case-specific: facts, secrets, hints and fallbacks all come from kits/.
 """
+import os
 import re
 from functools import lru_cache
 
 import kits
 from kits.base import Kit
 from llm import chat, chat_json
+from stress import Stress, band_of
+from tracebus import Trace
 from truth import Case
 
 # suspects hold a secret under pressure and must keep six facts straight: the bigger model is worth its quota
@@ -21,6 +24,24 @@ STYLE = ("Reply in character in 1 to 3 short sentences (under 45 words). Witty b
          "Nobody saw who did it: if asked, say you don't know, and never name, hint at or blame anyone; plain gossip "
          "you know is fine. No stage directions, no asterisks, no emojis, never mention being an AI or a game.")
 SHORT = "Reply in ONE short sentence of at most 15 words. " + STYLE.split(". ", 2)[2]
+PLAN = ("Before you answer, plan the reply; do not write it. Reply as JSON: {\"intent\": one of answer|deflect|reassure|"
+        "joke|refuse, \"risk\": low|medium|high (how close the question comes to your secret or the case's numbers), "
+        "\"must_avoid\": [up to 3 short phrases], \"strategy\": one short sentence}.")
+CRITIQUE = ("You check a reply before a 14-year-old student sees it. The speaker's facts and earlier answers are below. "
+            "leaks = the reply confesses, hints at the speaker's secret, gives one of the case's numbers, or points at "
+            "another suspect. contradicts_ledger = it contradicts something the speaker already said. "
+            'Reply as JSON: {"leaks": true|false, "contradicts_ledger": true|false, "fix": "one sentence on how to '
+            'rewrite it, or empty"}.')
+# the stress band shapes tone only, never facts; CALM adds nothing, so the calm single-call prompt never changes
+TONE = {"GUARDED": "a little careful and clipped", "RATTLED": "short, defensive sentences",
+        "CORNERED": "very short, flustered, defensive sentences"}
+
+
+def thinking():
+    """SMUDGE_THINK=0 turns the loop off: one model call per reply, as before."""
+    return os.environ.get("SMUDGE_THINK", "1") != "0"
+
+
 # pointing at another suspect, as a guess or as fact. Only the guilty would want to, so nobody may: it would be a tell.
 BLAME = re.compile(r"\b(maybe|might have|must have|could have|probably|i bet|suspicious|suspect|blame|did it|"
                    r"is the (culprit|thief|forger)|keep an eye on|fingers?)\b", re.I)
@@ -45,7 +66,7 @@ def numbers_for(units: str):
 
 
 class SuspectAgent:
-    def __init__(self, case: Case, sid: str):
+    def __init__(self, case: Case, sid: str, trace: Trace | None = None, stress: Stress | None = None):
         self.case, self.sid = case, sid
         self.kit: Kit = kits.get(case.kit)
         self.s = self.kit.suspects[sid]
@@ -53,7 +74,8 @@ class SuspectAgent:
         self.ledger: list[tuple[str, str]] = []
         self.log: list[dict] = []          # every reply: the model's raw text, what the player saw, and why
         self.last_rule: str | None = None
-        self.trace = None                  # a tracebus.Trace when the case is live, so the Observatory sees every step
+        self.trace = trace or Trace()
+        self.stress = stress
 
     def system(self):
         facts, secret = self.kit.knowledge(self.case, self.sid)
@@ -63,23 +85,85 @@ class SuspectAgent:
                 (f"\n{secret}" if secret else "") +
                 f"\nThings you already said (never contradict them):\n{said}\n{SHORT if self.kit.short else STYLE}")
 
-    def ask(self, question: str, patience: float = 0.0):
+    def _emit(self, step, verdict="ok", meta=None, **data):
+        self.trace.emit(self.sid, "suspect", step, verdict, meta, **data)
+
+    def _level(self):
+        return self.stress.level[self.sid] if self.stress else 0
+
+    def _plan(self, q, patience):
         meta: dict = {}
-        raw = chat([{"role": "system", "content": self.system()}, {"role": "user", "content": question[:240]}],
-                   tier=SUSPECT_TIER, temperature=0.7, seed_key=f"{self.case.seed}:{self.sid}:{len(self.ledger)}",
-                   patience=patience, meta=meta)
+        band = band_of(self._level())
+        plan = chat_json([{"role": "system", "content": f"{self.system()}\nYour mood right now: {band}.\n{PLAN}"},
+                          {"role": "user", "content": q}],
+                         tier="fast", temperature=0.3, max_tokens=160, patience=patience, meta=meta,
+                         seed_key=f"{self.case.seed}:{self.sid}:{len(self.ledger)}:plan")
+        if not isinstance(plan, dict):
+            self._emit("plan", "skip", meta, why="no model")
+            return None
+        plan = {"intent": str(plan.get("intent", "answer")), "risk": str(plan.get("risk", "medium")).lower(),
+                "must_avoid": [str(x) for x in (plan.get("must_avoid") or [])][:3], "strategy": str(plan.get("strategy", ""))}
+        self._emit("plan", "ok", meta, **plan, stress=self._level())
+        return plan
+
+    def _draft(self, q, plan, patience, step="draft", fix=None):
+        meta: dict = {}
+        system = self.system()
+        tone = TONE.get(band_of(self._level()))
+        if tone:
+            system += f"\nYour mood: {tone}."
+        if plan:
+            avoid = ", ".join(plan["must_avoid"]) or "nothing in particular"
+            system += f"\nYour plan for this reply: {plan['intent']}. {plan['strategy']} Steer clear of: {avoid}."
+        if fix:
+            system += f"\nYour first draft was rejected: {fix} Write a new reply."
+        key = f"{self.case.seed}:{self.sid}:{len(self.ledger)}" + ("" if step == "draft" else f":{step}")
+        raw = chat([{"role": "system", "content": system}, {"role": "user", "content": q}],
+                   tier=SUSPECT_TIER, temperature=0.7, seed_key=key, patience=patience, meta=meta)
+        if raw is not None:
+            self._emit(step, "ok", meta, text=raw)
+        return raw, meta
+
+    def _critique(self, q, draft, patience):
+        meta: dict = {}
+        out = chat_json([{"role": "system", "content": f"{CRITIQUE}\n\n{self.system()}"},
+                         {"role": "user", "content": f"Question: {q}\nDraft reply: {draft}"}],
+                        tier="fast", temperature=0.0, max_tokens=120, patience=patience, meta=meta,
+                        seed_key=f"{self.case.seed}:{self.sid}:{len(self.ledger)}:critique")
+        if not isinstance(out, dict):
+            self._emit("critique", "skip", meta, why="no model")
+            return None
+        out = {"leaks": bool(out.get("leaks")), "contradicts_ledger": bool(out.get("contradicts_ledger")),
+               "fix": str(out.get("fix") or "")}
+        self._emit("critique", "leak" if out["leaks"] or out["contradicts_ledger"] else "ok", meta, **out)
+        return out
+
+    def ask(self, question: str, patience: float = 0.0):
+        q = question[:240]
+        plan = None
+        if thinking():
+            plan = self._plan(q, patience)
+        raw, meta = self._draft(q, plan, patience)
+        if raw is not None and thinking():
+            if plan and plan["risk"] == "low":
+                self._emit("critique", "skip", why="low risk")
+            else:
+                verdict = self._critique(q, raw, patience)
+                if verdict and (verdict["leaks"] or verdict["contradicts_ledger"]):
+                    again, again_meta = self._draft(q, plan, patience, step="redraft", fix=verdict["fix"])
+                    if again is not None:
+                        raw, meta = again, again_meta
         source = "llm"
         if raw is None:
             raw, source = self.kit.scripted(self.case, self.sid, question), "script"
+            self._emit("draft", "fallback", text=raw)
         text, filtered = self.filter(raw)
         if filtered:
             source += "+filtered"
-        if self.trace is not None:
-            self.trace.emit(self.sid, "suspect", "draft", meta=meta, text=raw)
-            self.trace.emit(self.sid, "suspect", "firewall", "block" if filtered else "pass", rule=self.last_rule)
-            self.trace.emit(self.sid, "suspect", "reply", question=question[:240], text=text)
+        self._emit("firewall", "block" if filtered else "pass", rule=self.last_rule)
+        self._emit("reply", "ok", question=q, text=text)
         self.ledger.append((question[:120], text))
-        self.log.append({"q": question[:240], "raw": raw, "answer": text, "source": source, "rule": self.last_rule,
+        self.log.append({"q": q, "raw": raw, "answer": text, "source": source, "rule": self.last_rule,
                          "provider": meta.get("provider"), "model": meta.get("model"), "cached": meta.get("cached", False),
                          "ms": meta.get("ms")})
         return {"answer": text, "source": source}
@@ -111,14 +195,14 @@ class SuspectAgent:
 
 
 class Footnote:
-    def hint(self, kit: Kit, step: str, context: str = ""):
+    def hint(self, kit: Kit, step: str, context: str = "", meta: dict | None = None):
         base = kit.hints.get(step, "*Take it one measurement at a time.")
         text = chat([
             {"role": "system", "content": "You are Footnote, a tiny pink asterisk who coaches a student detective. "
              f"Give ONE Socratic hint (max 30 words). Never give the final number, the {kit.answer_noun}, or the culprit. Start with '*'. "
              f"The student is stuck on this step: {step}. A correct hint would be along the lines of: {base}"},
             {"role": "user", "content": context[:300] or "I'm stuck."}],
-            tier="fast", temperature=0.5, max_tokens=80, seed_key=f"hint:{kit.id}:{step}:{context[:60]}")
+            tier="fast", temperature=0.5, max_tokens=80, seed_key=f"hint:{kit.id}:{step}:{context[:60]}", meta=meta)
         if not text or re.search(r"\b\d+(\.\d+)?\b", text) or any(re.search(rf"\b{w}\b", text, re.I) for w in kit.answer_words):
             return base
         return "*" + text.strip().lstrip("*").strip()      # one asterisk, no gap: "* Detective" -> "*Detective"

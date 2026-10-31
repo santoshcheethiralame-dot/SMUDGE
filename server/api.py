@@ -4,12 +4,13 @@ import os
 import random
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 
 import agents
 import kits
 import llm
+import stt
 from agents import SuspectAgent, Footnote
 from stress import Stress
 from tracebus import Trace
@@ -88,6 +89,16 @@ def case_new(req: NewCase):
                   "hints": [], "labs": [], "presents": [], "baits": []}
     return {"case_id": cid, "title": kit.title, "place": kit.place, **case.public(),
             "suspects": {sid: {"name": s["name"], "role": s["role"]} for sid, s in kit.suspects.items()}}
+
+
+@app.post("/api/stt")
+async def speech_to_text(req: Request):
+    """Raw audio body in, {"text"} out. Any error status tells the browser to use its own recognition instead."""
+    audio = await req.body()
+    try:
+        return {"text": stt.transcribe(audio, req.headers.get("content-type", "audio/webm"))}
+    except stt.SttError as e:
+        raise HTTPException(e.status, e.why)
 
 
 @app.post("/api/ask")

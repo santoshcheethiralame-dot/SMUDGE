@@ -4,26 +4,73 @@ import { voiceOf } from "../audio/voices";
 import { isMuted } from "../audio";
 
 const Rec: any = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
-export const canListen = () => Boolean(Rec);
+const canRecord = () => Boolean(navigator.mediaDevices?.getUserMedia) && typeof MediaRecorder !== "undefined";
+export const canListen = () => Boolean(Rec) || canRecord();
 
-/** Start listening; onText gets interim and final transcripts. Call the returned function to stop. */
-export function listen(onText: (text: string, final: boolean) => void, onError?: (why: string) => void): () => void {
+const SARVAM_WAIT = 4000;   // after release, how long Sarvam gets before the browser's own transcript is used
+
+/** Send a clip to the server, which asks Sarvam (the key lives there). Resolves null on any failure. */
+async function sarvam(blob: Blob): Promise<string | null> {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), SARVAM_WAIT);
+  try {
+    const r = await fetch("/api/stt", { method: "POST", body: blob, headers: { "Content-Type": blob.type || "audio/webm" }, signal: ctl.signal });
+    if (!r.ok) return null;
+    return ((await r.json()).text ?? "").trim() || null;
+  } catch { return null; } finally { clearTimeout(t); }
+}
+
+/** Start listening; onText gets interim and final transcripts. Call the returned function to stop: it returns a
+ *  promise that settles once the final text has been delivered (Sarvam's if it answered in time, else the browser's).
+ *  Two recognisers run at once: the browser's own for live words and as the fallback, and Sarvam on the recorded clip. */
+export function listen(onText: (text: string, final: boolean) => void, onError?: (why: string) => void): () => Promise<void> {
   hush();                                    // talking over a suspect cuts them off
-  const rec = new Rec();
-  rec.lang = "en-IN";
-  rec.interimResults = true;
-  rec.continuous = true;
-  rec.onresult = (e: any) => {
-    let text = "", final = false;
-    for (let n = 0; n < e.results.length; n++) {
-      text += e.results[n][0].transcript;
-      final = e.results[n].isFinal;
-    }
-    onText(text.trim(), final);
+  let local = "";
+  let rec: any = null;
+  if (Rec) {
+    rec = new Rec();
+    rec.lang = "en-IN";
+    rec.interimResults = true;
+    rec.continuous = true;
+    rec.onresult = (e: any) => {
+      let text = "", final = false;
+      for (let n = 0; n < e.results.length; n++) {
+        text += e.results[n][0].transcript;
+        final = e.results[n].isFinal;
+      }
+      local = text.trim();
+      onText(local, final);
+    };
+    // with Sarvam recording alongside, a browser-recogniser error is not fatal; only report it when it is all we have
+    rec.onerror = (e: any) => { if (!canRecord()) onError?.(String(e?.error ?? "error")); };
+    try { rec.start(); } catch { /* already running */ }
+  }
+
+  let clip: Promise<Blob | null> = Promise.resolve(null);
+  let recorder: MediaRecorder | null = null;
+  let live = true;
+  if (canRecord()) {
+    clip = navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+      const chunks: Blob[] = [];
+      const mr = new MediaRecorder(stream);
+      recorder = mr;
+      mr.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+      return new Promise<Blob | null>((resolve) => {
+        mr.onstop = () => { stream.getTracks().forEach((t) => t.stop()); resolve(chunks.length ? new Blob(chunks, { type: mr.mimeType || "audio/webm" }) : null); };
+        if (live) mr.start(); else { stream.getTracks().forEach((t) => t.stop()); resolve(null); }   // released before the mic opened
+      });
+    }).catch((e) => { if (!Rec) onError?.(e?.name === "NotAllowedError" ? "not-allowed" : "error"); return null; });
+  }
+
+  return async () => {
+    live = false;
+    try { rec?.stop(); } catch { /* already stopped */ }
+    try { if (recorder && recorder.state !== "inactive") recorder.stop(); } catch { /* already stopped */ }
+    const blob = await Promise.race([clip, new Promise<null>((r) => setTimeout(() => r(null), 1500))]);
+    const text = blob ? await sarvam(blob) : null;
+    if (text) onText(text, true);
+    else if (Rec) await new Promise((r) => setTimeout(r, 600));   // the browser's last words arrive just after release
   };
-  rec.onerror = (e: any) => { onError?.(String(e?.error ?? "error")); };   // typing still works
-  try { rec.start(); } catch { /* already running */ }
-  return () => { try { rec.stop(); } catch { /* already stopped */ } };
 }
 
 /** Each speaker gets their own installed voice (stable from their id), so the cast doesn't all sound alike.

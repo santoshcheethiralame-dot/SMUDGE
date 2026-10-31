@@ -113,7 +113,7 @@ export function askBox(scene: Phaser.Scene, chips: string[], placeholder: string
     mic.textContent = "🎙 Hold to talk";
     mic.setAttribute("aria-label", "Hold to ask out loud");
     mic.style.cssText = `font:inherit;padding:4px 10px;border:2px solid #0E1938;background:#F2E9CF;color:#0E1938;border-radius:6px;cursor:pointer;touch-action:none;`;
-    let stop: (() => void) | null = null;
+    let stop: (() => Promise<void>) | null = null;
     const down = (e: Event) => {
       e.preventDefault();
       if (stop) return;
@@ -127,15 +127,16 @@ export function askBox(scene: Phaser.Scene, chips: string[], placeholder: string
     };
     const up = () => {
       if (!stop) return;
-      stop();
+      const halt = stop;
       stop = null;
       mic.style.background = "#F2E9CF";
-      // the last words arrive just after release; give them a moment, then ask
-      setTimeout(() => {
+      input.placeholder = "Transcribing...";
+      // the last words arrive just after release (Sarvam's or the browser's); wait for them, then ask
+      halt().then(() => {
         const v = input.value.trim();
         if (v) finish(v);
-        else if (input.placeholder.startsWith("Listening")) input.placeholder = "Didn't catch that. Hold 🎙 and try again, or type.";
-      }, 600);
+        else input.placeholder = "Didn't catch that. Hold 🎙 and try again, or type.";
+      });
     };
     mic.addEventListener("pointerdown", down);
     mic.addEventListener("pointerup", up);

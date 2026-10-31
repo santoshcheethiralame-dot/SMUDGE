@@ -1,237 +1,105 @@
 [
  {
+  "kit": "acids",
   "seed": 1000,
-  "culprit": "cyl",
-  "no_lab": "bob",
-  "with_lab": "cyl",
+  "culprit": "bicarb",
+  "no_lab": "sudsy",
+  "with_lab": "bicarb",
   "passed": true
  },
  {
+  "kit": "acids",
   "seed": 1001,
-  "culprit": "karat",
-  "no_lab": "karat",
-  "with_lab": "karat",
+  "culprit": "citrine",
+  "no_lab": "sudsy",
+  "with_lab": "citrine",
   "passed": true
  },
  {
+  "kit": "acids",
   "seed": 1002,
-  "culprit": "bob",
-  "no_lab": "cyl",
-  "with_lab": "karat",
-  "passed": false
+  "culprit": "sudsy",
+  "no_lab": "citrine",
+  "with_lab": "sudsy",
+  "passed": true
  },
  {
+  "kit": "acids",
   "seed": 1003,
-  "culprit": "cyl",
-  "no_lab": "bob",
-  "with_lab": "cyl",
+  "culprit": "bicarb",
+  "no_lab": "sudsy",
+  "with_lab": "bicarb",
   "passed": true
  },
  {
+  "kit": "acids",
   "seed": 1004,
-  "culprit": "cyl",
-  "no_lab": "karat",
-  "with_lab": "cyl",
+  "culprit": "bicarb",
+  "no_lab": "sudsy",
+  "with_lab": "bicarb",
   "passed": true
  },
  {
+  "kit": "acids",
   "seed": 1005,
-  "culprit": "cyl",
-  "no_lab": "cyl",
-  "with_lab": "cyl",
+  "culprit": "bicarb",
+  "no_lab": "sudsy",
+  "with_lab": "bicarb",
   "passed": true
  },
  {
-  "seed": 1006,
-  "culprit": "cyl",
-  "no_lab": "cyl",
-  "with_lab": "cyl",
-  "passed": true
- },
- {
-  "seed": 1007,
-  "culprit": "karat",
-  "no_lab": "bob",
-  "with_lab": "karat",
-  "passed": true
- },
- {
-  "seed": 1008,
-  "culprit": "bob",
-  "no_lab": "karat",
-  "with_lab": "bob",
-  "passed": true
- },
- {
-  "seed": 1009,
-  "culprit": "karat",
-  "no_lab": "bob",
-  "with_lab": "karat",
-  "passed": true
- },
- {
-  "seed": 1010,
-  "culprit": "bob",
-  "no_lab": "bob",
-  "with_lab": "bob",
-  "passed": true
- },
- {
-  "seed": 1011,
-  "culprit": "cyl",
-  "no_lab": "karat",
-  "with_lab": "cyl",
-  "passed": true
- },
- {
-  "kit": "motion",
+  "kit": "power",
   "seed": 1000,
-  "culprit": "rolla",
-  "no_lab": "mu",
-  "with_lab": "rolla",
+  "culprit": "hoist",
+  "no_lab": "dynamo",
+  "with_lab": "hoist",
   "passed": true
  },
  {
-  "kit": "motion",
+  "kit": "power",
   "seed": 1001,
-  "culprit": "dash",
-  "no_lab": "dash",
-  "with_lab": "dash",
+  "culprit": "cog",
+  "no_lab": "dynamo",
+  "with_lab": "cog",
   "passed": true
  },
  {
-  "kit": "motion",
+  "kit": "power",
   "seed": 1002,
-  "culprit": "mu",
-  "no_lab": "mu",
-  "with_lab": "mu",
+  "culprit": "dynamo",
+  "no_lab": "dynamo",
+  "with_lab": "dynamo",
   "passed": true
  },
  {
-  "kit": "motion",
+  "kit": "power",
   "seed": 1003,
-  "culprit": "rolla",
-  "no_lab": "mu",
-  "with_lab": "rolla",
+  "culprit": "hoist",
+  "no_lab": "dynamo",
+  "with_lab": "hoist",
   "passed": true
  },
  {
-  "kit": "motion",
+  "kit": "power",
   "seed": 1004,
-  "culprit": "rolla",
-  "no_lab": "rolla",
-  "with_lab": "rolla",
+  "culprit": "hoist",
+  "no_lab": "dynamo",
+  "with_lab": "hoist",
   "passed": true
  },
  {
-  "kit": "motion",
+  "kit": "power",
   "seed": 1005,
-  "culprit": "rolla",
-  "no_lab": "dash",
-  "with_lab": "rolla",
-  "passed": true
- },
- {
-  "kit": "motion",
-  "seed": 1006,
-  "culprit": "rolla",
-  "no_lab": "mu",
-  "with_lab": "rolla",
-  "passed": true
- },
- {
-  "kit": "motion",
-  "seed": 1007,
-  "culprit": "dash",
-  "no_lab": "mu",
-  "with_lab": "dash",
-  "passed": true
- },
- {
-  "kit": "motion",
-  "seed": 1008,
-  "culprit": "mu",
-  "no_lab": "dash",
-  "with_lab": "mu",
-  "passed": true
- },
- {
-  "kit": "sound",
-  "seed": 1000,
-  "culprit": "thump",
-  "no_lab": "reverb",
-  "with_lab": "thump",
-  "passed": true
- },
- {
-  "kit": "sound",
-  "seed": 1001,
-  "culprit": "reverb",
-  "no_lab": "thump",
-  "with_lab": "coil",
-  "passed": false
- },
- {
-  "kit": "sound",
-  "seed": 1002,
-  "culprit": "coil",
-  "no_lab": "coil",
-  "with_lab": "coil",
-  "passed": true
- },
- {
-  "kit": "sound",
-  "seed": 1003,
-  "culprit": "thump",
-  "no_lab": "coil",
-  "with_lab": "thump",
-  "passed": true
- },
- {
-  "kit": "sound",
-  "seed": 1004,
-  "culprit": "thump",
-  "no_lab": "reverb",
-  "with_lab": "thump",
-  "passed": true
- },
- {
-  "kit": "sound",
-  "seed": 1005,
-  "culprit": "thump",
-  "no_lab": "reverb",
-  "with_lab": "thump",
-  "passed": true
- },
- {
-  "kit": "sound",
-  "seed": 1006,
-  "culprit": "thump",
-  "no_lab": "thump",
-  "with_lab": "thump",
-  "passed": true
- },
- {
-  "kit": "sound",
-  "seed": 1007,
-  "culprit": "reverb",
-  "no_lab": "coil",
-  "with_lab": "thump",
-  "passed": false
- },
- {
-  "kit": "sound",
-  "seed": 1008,
-  "culprit": "coil",
-  "no_lab": "coil",
-  "with_lab": "coil",
+  "culprit": "hoist",
+  "no_lab": "dynamo",
+  "with_lab": "hoist",
   "passed": true
  },
  {
   "kit": "heights",
   "seed": 1000,
   "culprit": "vane",
-  "no_lab": "vane",
+  "no_lab": "lumen",
   "with_lab": "vane",
   "passed": true
  },
@@ -239,7 +107,7 @@
   "kit": "heights",
   "seed": 1001,
   "culprit": "lumen",
-  "no_lab": "vane",
+  "no_lab": "lumen",
   "with_lab": "lumen",
   "passed": true
  },
@@ -263,9 +131,9 @@
   "kit": "heights",
   "seed": 1004,
   "culprit": "vane",
-  "no_lab": "vane",
-  "with_lab": "vane",
-  "passed": true
+  "no_lab": "lumen",
+  "with_lab": "lumen",
+  "passed": false
  },
  {
   "kit": "heights",
@@ -287,7 +155,7 @@
   "kit": "refraction",
   "seed": 1001,
   "culprit": "frost",
-  "no_lab": "frost",
+  "no_lab": "pane",
   "with_lab": "frost",
   "passed": true
  },
@@ -311,7 +179,7 @@
   "kit": "refraction",
   "seed": 1004,
   "culprit": "pane",
-  "no_lab": "pane",
+  "no_lab": "geo",
   "with_lab": "pane",
   "passed": true
  },
@@ -319,8 +187,296 @@
   "kit": "refraction",
   "seed": 1005,
   "culprit": "pane",
-  "no_lab": "frost",
+  "no_lab": "pane",
   "with_lab": "pane",
+  "passed": true
+ },
+ {
+  "kit": "ohm",
+  "seed": 1000,
+  "culprit": "ohmar",
+  "no_lab": "volta",
+  "with_lab": "ohmar",
+  "passed": true
+ },
+ {
+  "kit": "ohm",
+  "seed": 1001,
+  "culprit": "volta",
+  "no_lab": "volta",
+  "with_lab": "volta",
+  "passed": true
+ },
+ {
+  "kit": "ohm",
+  "seed": 1002,
+  "culprit": "glim",
+  "no_lab": "glim",
+  "with_lab": "glim",
+  "passed": true
+ },
+ {
+  "kit": "ohm",
+  "seed": 1003,
+  "culprit": "ohmar",
+  "no_lab": "volta",
+  "with_lab": "ohmar",
+  "passed": true
+ },
+ {
+  "kit": "ohm",
+  "seed": 1004,
+  "culprit": "ohmar",
+  "no_lab": "volta",
+  "with_lab": "ohmar",
+  "passed": true
+ },
+ {
+  "kit": "ohm",
+  "seed": 1005,
+  "culprit": "ohmar",
+  "no_lab": "volta",
+  "with_lab": "ohmar",
+  "passed": true
+ },
+ {
+  "kit": "heat",
+  "seed": 1000,
+  "culprit": "ferris",
+  "no_lab": "ferris",
+  "with_lab": "ferris",
+  "passed": true
+ },
+ {
+  "kit": "heat",
+  "seed": 1001,
+  "culprit": "al",
+  "no_lab": "brewster",
+  "with_lab": "al",
+  "passed": true
+ },
+ {
+  "kit": "heat",
+  "seed": 1002,
+  "culprit": "brewster",
+  "no_lab": "brewster",
+  "with_lab": "brewster",
+  "passed": true
+ },
+ {
+  "kit": "heat",
+  "seed": 1003,
+  "culprit": "ferris",
+  "no_lab": "ferris",
+  "with_lab": "ferris",
+  "passed": true
+ },
+ {
+  "kit": "heat",
+  "seed": 1004,
+  "culprit": "ferris",
+  "no_lab": "al",
+  "with_lab": "ferris",
+  "passed": true
+ },
+ {
+  "kit": "heat",
+  "seed": 1005,
+  "culprit": "ferris",
+  "no_lab": "al",
+  "with_lab": "ferris",
+  "passed": true
+ },
+ {
+  "kit": "density",
+  "seed": 1000,
+  "culprit": "cyl",
+  "no_lab": null,
+  "with_lab": "cyl",
+  "passed": true
+ },
+ {
+  "kit": "density",
+  "seed": 1001,
+  "culprit": "karat",
+  "no_lab": "bob",
+  "with_lab": "karat",
+  "passed": true
+ },
+ {
+  "kit": "density",
+  "seed": 1002,
+  "culprit": "bob",
+  "no_lab": "bob",
+  "with_lab": "bob",
+  "passed": true
+ },
+ {
+  "kit": "density",
+  "seed": 1003,
+  "culprit": "cyl",
+  "no_lab": "karat",
+  "with_lab": "cyl",
+  "passed": true
+ },
+ {
+  "kit": "density",
+  "seed": 1004,
+  "culprit": "cyl",
+  "no_lab": "karat",
+  "with_lab": "cyl",
+  "passed": true
+ },
+ {
+  "kit": "density",
+  "seed": 1005,
+  "culprit": "cyl",
+  "no_lab": "bob",
+  "with_lab": "cyl",
+  "passed": true
+ },
+ {
+  "kit": "motion",
+  "seed": 1000,
+  "culprit": "rolla",
+  "no_lab": "rolla",
+  "with_lab": "rolla",
+  "passed": true
+ },
+ {
+  "kit": "motion",
+  "seed": 1001,
+  "culprit": "dash",
+  "no_lab": "dash",
+  "with_lab": "dash",
+  "passed": true
+ },
+ {
+  "kit": "motion",
+  "seed": 1002,
+  "culprit": "mu",
+  "no_lab": "mu",
+  "with_lab": "mu",
+  "passed": true
+ },
+ {
+  "kit": "motion",
+  "seed": 1003,
+  "culprit": "rolla",
+  "no_lab": "rolla",
+  "with_lab": "rolla",
+  "passed": true
+ },
+ {
+  "kit": "motion",
+  "seed": 1004,
+  "culprit": "rolla",
+  "no_lab": "mu",
+  "with_lab": "rolla",
+  "passed": true
+ },
+ {
+  "kit": "motion",
+  "seed": 1005,
+  "culprit": "rolla",
+  "no_lab": "mu",
+  "with_lab": "rolla",
+  "passed": true
+ },
+ {
+  "kit": "sound",
+  "seed": 1000,
+  "culprit": "thump",
+  "no_lab": "thump",
+  "with_lab": "thump",
+  "passed": true
+ },
+ {
+  "kit": "sound",
+  "seed": 1001,
+  "culprit": "reverb",
+  "no_lab": "reverb",
+  "with_lab": "reverb",
+  "passed": true
+ },
+ {
+  "kit": "sound",
+  "seed": 1002,
+  "culprit": "coil",
+  "no_lab": "reverb",
+  "with_lab": "coil",
+  "passed": true
+ },
+ {
+  "kit": "sound",
+  "seed": 1003,
+  "culprit": "thump",
+  "no_lab": null,
+  "with_lab": "thump",
+  "passed": true
+ },
+ {
+  "kit": "sound",
+  "seed": 1004,
+  "culprit": "thump",
+  "no_lab": "thump",
+  "with_lab": "thump",
+  "passed": true
+ },
+ {
+  "kit": "sound",
+  "seed": 1005,
+  "culprit": "thump",
+  "no_lab": "thump",
+  "with_lab": "thump",
+  "passed": true
+ },
+ {
+  "kit": "fall",
+  "seed": 1000,
+  "culprit": "varnish",
+  "no_lab": "pendle",
+  "with_lab": "varnish",
+  "passed": true
+ },
+ {
+  "kit": "fall",
+  "seed": 1001,
+  "culprit": "rivet",
+  "no_lab": "pendle",
+  "with_lab": "rivet",
+  "passed": true
+ },
+ {
+  "kit": "fall",
+  "seed": 1002,
+  "culprit": "pendle",
+  "no_lab": "pendle",
+  "with_lab": "pendle",
+  "passed": true
+ },
+ {
+  "kit": "fall",
+  "seed": 1003,
+  "culprit": "varnish",
+  "no_lab": "pendle",
+  "with_lab": "varnish",
+  "passed": true
+ },
+ {
+  "kit": "fall",
+  "seed": 1004,
+  "culprit": "varnish",
+  "no_lab": "pendle",
+  "with_lab": "varnish",
+  "passed": true
+ },
+ {
+  "kit": "fall",
+  "seed": 1005,
+  "culprit": "varnish",
+  "no_lab": "rivet",
+  "with_lab": "varnish",
   "passed": true
  }
 ]

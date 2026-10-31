@@ -6,7 +6,7 @@ import { blip, blipEvery, duck, sfx } from "../audio";
 import { calm } from "./juice";
 import { FONT, INK, PAPER, RED, W, H } from "../consts";
 import { api } from "../api";
-import { speak, hush } from "./voice";
+import { speak, hush, prefetch, ready } from "./voice";
 
 // any case's suspect id works too; a suspect is anyone with a "<id>_portraits" sheet loaded
 export type Who = "smudge" | "foot" | "baron" | "narrator" | (string & {});
@@ -123,8 +123,9 @@ export class Dialogue {
   say(line: Line): Promise<void> {
     const pages = paginate(line.text);
     return (async () => {
+      if (line.voice !== false) for (const text of pages) prefetch(line.who, text);   // every page's audio starts loading now
       for (const text of pages) {
-        if (line.voice !== false) void speak(line.who, text);
+        if (line.voice !== false) { await ready(line.who, text); void speak(line.who, text); }   // text and voice start together
         await this.sayPage({ ...line, text });
       }
       if (line.voice !== false) hush();                 // moving on cuts the voice off with the page

@@ -4,13 +4,14 @@ import os
 import random
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from pydantic import BaseModel
 
 import agents
 import kits
 import llm
 import stt
+import tts
 from agents import SuspectAgent, Footnote
 from stress import Stress
 from tracebus import Trace
@@ -98,6 +99,20 @@ async def speech_to_text(req: Request):
     try:
         return {"text": stt.transcribe(audio, req.headers.get("content-type", "audio/webm"))}
     except stt.SttError as e:
+        raise HTTPException(e.status, e.why)
+
+
+class Say(BaseModel):
+    who: str
+    text: str
+
+
+@app.post("/api/tts")
+def text_to_speech(req: Say):
+    """A line in, spoken audio (mp3) out. Any error status tells the browser to use its own voice instead."""
+    try:
+        return Response(tts.synthesize(req.who, req.text), media_type="audio/mpeg")
+    except tts.TtsError as e:
         raise HTTPException(e.status, e.why)
 
 

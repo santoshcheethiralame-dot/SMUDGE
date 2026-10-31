@@ -4,32 +4,92 @@
     {
       "name": "game",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "game", "run", "dev"],
+      "runtimeArgs": [
+        "--prefix",
+        "game",
+        "run",
+        "dev"
+      ],
       "port": 8872
     },
     {
       "name": "game-prod",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "game", "run", "preview"],
+      "runtimeArgs": [
+        "--prefix",
+        "game",
+        "run",
+        "preview"
+      ],
       "port": 8872
     },
     {
       "name": "game-share",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "game", "run", "preview", "--", "--host"],
+      "runtimeArgs": [
+        "--prefix",
+        "game",
+        "run",
+        "preview",
+        "--",
+        "--host"
+      ],
       "port": 8872
     },
     {
       "name": "server",
       "runtimeExecutable": "C:\\Users\\carbo\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe",
-      "runtimeArgs": ["-m", "uvicorn", "api:app", "--port", "8873", "--app-dir", "server"],
+      "runtimeArgs": [
+        "-m",
+        "uvicorn",
+        "api:app",
+        "--port",
+        "8873",
+        "--app-dir",
+        "server"
+      ],
       "port": 8873
     },
     {
       "name": "mascot-smoke",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8871", "--directory", "art/mascot"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8871",
+        "--directory",
+        "art/mascot"
+      ],
       "port": 8871
+    },
+    {
+      "name": "server-alt",
+      "runtimeExecutable": "C:\\Users\\carbo\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe",
+      "runtimeArgs": [
+        "-m",
+        "uvicorn",
+        "api:app",
+        "--port",
+        "8875",
+        "--app-dir",
+        "server"
+      ],
+      "port": 8875
+    },
+    {
+      "name": "game-alt",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "game",
+        "run",
+        "dev"
+      ],
+      "port": 8874,
+      "env": {
+        "SMUDGE_API_PORT": "8875",
+        "SMUDGE_GAME_PORT": "8874"
+      }
     }
   ]
 }

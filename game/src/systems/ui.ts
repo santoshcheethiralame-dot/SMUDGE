@@ -101,7 +101,7 @@ export function askBox(scene: Phaser.Scene, chips: string[], placeholder: string
     input.style.cssText = `flex:1;font:inherit;padding:6px 8px;border:2px solid #0E1938;background:#FFFBEF;color:#0E1938;border-radius:6px;min-width:0;`;
     const send = document.createElement("button");
     send.type = "submit";
-    send.textContent = "Ask";
+    send.textContent = "Send";
     send.style.cssText = `font:inherit;padding:4px 12px;border:2px solid #0E1938;background:#C9302A;color:#fff;border-radius:6px;cursor:pointer;`;
     const done = document.createElement("button");
     done.type = "button";
@@ -110,7 +110,7 @@ export function askBox(scene: Phaser.Scene, chips: string[], placeholder: string
     done.onclick = () => finish(null);
     const mic = document.createElement("button");
     mic.type = "button";
-    mic.textContent = "🎙 Hold";
+    mic.textContent = "🎙 Hold to talk";
     mic.setAttribute("aria-label", "Hold to ask out loud");
     mic.style.cssText = `font:inherit;padding:4px 10px;border:2px solid #0E1938;background:#F2E9CF;color:#0E1938;border-radius:6px;cursor:pointer;touch-action:none;`;
     let stop: (() => void) | null = null;
@@ -118,7 +118,12 @@ export function askBox(scene: Phaser.Scene, chips: string[], placeholder: string
       e.preventDefault();
       if (stop) return;
       mic.style.background = "#F07AAE";
-      stop = listen((text) => { input.value = text; });
+      input.value = "";
+      input.placeholder = "Listening... let go to send";
+      stop = listen((text) => { input.value = text; }, (why) => {
+        input.placeholder = why === "not-allowed" || why === "service-not-allowed" ? "Mic blocked: allow it in the browser, or type"
+          : why === "network" ? "Speech needs internet (Chrome sends audio to Google). Type instead" : `Mic problem (${why}). Type instead`;
+      });
     };
     const up = () => {
       if (!stop) return;
@@ -126,7 +131,11 @@ export function askBox(scene: Phaser.Scene, chips: string[], placeholder: string
       stop = null;
       mic.style.background = "#F2E9CF";
       // the last words arrive just after release; give them a moment, then ask
-      setTimeout(() => { const v = input.value.trim(); if (v) finish(v); }, 450);
+      setTimeout(() => {
+        const v = input.value.trim();
+        if (v) finish(v);
+        else if (input.placeholder.startsWith("Listening")) input.placeholder = "Didn't catch that. Hold 🎙 and try again, or type.";
+      }, 600);
     };
     mic.addEventListener("pointerdown", down);
     mic.addEventListener("pointerup", up);

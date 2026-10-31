@@ -6,10 +6,12 @@ import { blip, blipEvery, duck, sfx } from "../audio";
 import { calm } from "./juice";
 import { FONT, INK, PAPER, RED, W, H } from "../consts";
 import { api } from "../api";
+import { speak, hush } from "./voice";
 
 // any case's suspect id works too; a suspect is anyone with a "<id>_portraits" sheet loaded
 export type Who = "smudge" | "foot" | "baron" | "narrator" | (string & {});
-export interface Line { who: Who; text: string; expr?: string }
+/** `voice: true` speaks each page aloud as it is shown, so the voice and the text never drift apart. */
+export interface Line { who: Who; text: string; expr?: string; voice?: boolean }
 
 const SMUDGE_EXPR = ["neutral", "smug", "surprised", "thinking", "determined", "happy", "worried", "angry"];
 const FOOT_EXPR = ["neutral", "happy", "worried", "surprised"];
@@ -120,8 +122,13 @@ export class Dialogue {
   /** A long line is shown a page at a time; the red ▼ is the "more" click. A page is about two sentences or 110 characters. */
   say(line: Line): Promise<void> {
     const pages = paginate(line.text);
-    if (pages.length < 2) return this.sayPage(line);
-    return (async () => { for (const text of pages) await this.sayPage({ ...line, text }); })();
+    return (async () => {
+      for (const text of pages) {
+        if (line.voice) void speak(line.who, text);
+        await this.sayPage({ ...line, text });
+      }
+      if (line.voice) hush();                 // moving on cuts the voice off with the page
+    })();
   }
 
   private sayPage(line: Line): Promise<void> {

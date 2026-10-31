@@ -81,3 +81,9 @@ def test_real_short_questions_are_not_filler():
     assert not agents.is_filler("who?")
     assert not agents.is_filler("Where were you?")
     assert not agents.is_filler("no, tell me")
+
+
+def test_vowelless_noises_are_filler():
+    for q in ["Hrrrrm!", "hmm", "grr", "shh", "mmm"]:
+        assert agents.is_filler(q), q
+    assert not agents.is_filler("why?")

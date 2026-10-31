@@ -92,7 +92,9 @@ if ("speechSynthesis" in window) speechSynthesis.getVoices();   // voices load l
 // Spoken lines come from Sarvam (through the server) when it answers, and from the browser's own voice when it doesn't.
 const clips = new Map<string, Promise<HTMLAudioElement | null>>();
 const clipsReady = new Map<string, HTMLAudioElement>();
+let ttsWorked = false;                       // once Sarvam has answered, a slow line waits for it rather than switching to a different voice
 let ttsDownUntil = 0;                        // after a failure, skip Sarvam for a while so a dead service never delays a line
+let gen = 0;                                 // bumps on every hush(), so a late clip knows it was cut off
 let clip: HTMLAudioElement | null = null;    // the line playing right now, if it is a Sarvam clip
 const spoken = (text: string) => text.replace(/^\*+\s*/, "");
 const clipKey = (who: string, text: string) => `${who}\u0001${text}`;
@@ -108,6 +110,7 @@ export function prefetch(who: string, text: string) {
       if (!r.ok) { ttsDownUntil = Date.now() + (r.status === 503 ? 600_000 : 15_000); clips.delete(k); return null; }
       const a = new Audio(URL.createObjectURL(await r.blob()));
       a.preload = "auto";
+      ttsWorked = true;
       clipsReady.set(k, a);
       return a;
     })
@@ -131,9 +134,18 @@ export function speak(who: string, text: string): Promise<void> {
   // everyone is voiced; the speaker button / M key (the game's mute) silences speech too
   text = spoken(text);
   if (isMuted() || !text.trim()) return Promise.resolve();
-  const a = clipsReady.get(clipKey(who, text));
+  const k = clipKey(who, text);
+  const a = clipsReady.get(k);
   if (a) return playClip(a, () => browserSpeak(who, text));
-  prefetch(who, text);            // not ready yet: the browser voice covers this line, and the clip is cached for a repeat
+  prefetch(who, text);
+  const pending = clips.get(k);
+  // Sarvam is working but this clip is late: wait for it (up to 6 s) so the speaker keeps their own voice.
+  // Only when Sarvam is down or has never answered does the browser voice speak the line.
+  if (pending && ttsWorked) {
+    const mine = gen;             // a newer line or hush() in the meantime means this one is no longer wanted
+    return Promise.race([pending, new Promise<null>((r) => setTimeout(() => r(null), 6000))]).then((c) =>
+      c && gen === mine ? playClip(c, () => browserSpeak(who, text)) : c ? undefined : gen === mine ? browserSpeak(who, text) : undefined);
+  }
   return browserSpeak(who, text);
 }
 
@@ -186,6 +198,7 @@ function browserSpeak(who: string, text: string): Promise<void> {
 }
 
 export function hush() {
+  gen++;
   if (clip) { try { clip.pause(); } catch { /* already stopped */ } clip = null; }
   if ("speechSynthesis" in window) { try { speechSynthesis.cancel(); } catch { /* nothing to cancel */ } }
   const f = finish;

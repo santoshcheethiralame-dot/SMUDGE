@@ -66,6 +66,8 @@ case). Check the lab shows Δt = 1.50 s on first run; if not, check the URL has 
 
 `?judges` is the stage cut: one interview (Varnish) opens the stage and slip-or-push is skipped, so the run
 is cold open → Varnish → lab (waveform, two drops, notebook) → point out the liar → restore, about 5 minutes.
+`?judges` also adds a **Show answer** button on the waveform (drops both markers on the cry and the thud) and in
+the notebook (writes in 11.03 m); you still press Lock in and Check, so the judges see each step land.
 Cut order if still short on time: exit check, cold-open animation. **Never cut:**
 the prediction moment, the strobe trail, the waveform, the docked Observatory during the interrogation.
 Dock at beat 4, not earlier: judges should see the reply *and* the reasoning arrive together.

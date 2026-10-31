@@ -110,7 +110,7 @@ export class LabFall extends Phaser.Scene {
     b.on("pointerdown", () => { sfx("click"); fn(); });
     return b;
   }
-  /** The checklist: steps done are ticked, the current one is lit, with what to do right now under it. */
+  /** The checklist: steps done are ticked, the current one is lit, with what to do right now under it. Under the dialogue box (1000). */
   private step(n: number, todo: string) {
     for (const o of this.track) o.destroy();
     this.track = [];
@@ -119,12 +119,12 @@ export class LabFall extends Phaser.Scene {
       const now = i === n;
       const t = this.add.text(5, y, `${i < n ? "✓" : now ? "▸" : " "} ${i + 1}  ${name}`, {
         fontFamily: FONT, fontSize: "8px", color: now ? "#FAC775" : i < n ? "#7FD4A0" : "#7A86A8",
-      }).setDepth(1000).setPadding(3, 1, 3, 1).setBackgroundColor("rgba(7,10,23,0.78)");
+      }).setDepth(990).setPadding(3, 1, 3, 1).setBackgroundColor("rgba(7,10,23,0.78)");
       this.track.push(t);
       y += 11;
       if (now) {
         const d = this.add.text(12, y, todo, { fontFamily: FONT, fontSize: "7px", color: "#F2E9CF", wordWrap: { width: 108 } })
-          .setDepth(1000).setPadding(3, 1, 3, 2).setBackgroundColor("rgba(7,10,23,0.78)");
+          .setDepth(990).setPadding(3, 1, 3, 2).setBackgroundColor("rgba(7,10,23,0.78)");
         this.tweens.add({ targets: d, alpha: { from: 0, to: 1 }, x: { from: 6, to: 12 }, duration: 220 });
         this.track.push(d);
         y += d.height + 2;
@@ -181,10 +181,10 @@ export class LabFall extends Phaser.Scene {
         lockWay = this.arrow(lock.x, lock.y - 12);
       }
     };
-    const marks: { t: number; line: Phaser.GameObjects.Rectangle; handle: Phaser.GameObjects.Rectangle; way?: Phaser.GameObjects.Graphics }[] = [1.0, 4.0].map((t0, i) => {
+    const marks: { t: number; line: Phaser.GameObjects.Rectangle; handle: Phaser.GameObjects.Rectangle; way?: Phaser.GameObjects.Graphics; put?: () => void }[] = [1.0, 4.0].map((t0, i) => {
       const line = this.keep(this.add.rectangle(0, Y0, 1, STRIP.y1 - STRIP.y0, i ? 0x7ab4ff : 0xf07aae));
       const handle = this.keep(this.add.rectangle(0, STRIP.y1 + 22, 12, 10, i ? 0x7ab4ff : 0xf07aae).setInteractive({ useHandCursor: true, draggable: true }));
-      const m: { t: number; line: Phaser.GameObjects.Rectangle; handle: Phaser.GameObjects.Rectangle; way?: Phaser.GameObjects.Graphics } = { t: t0, line, handle };
+      const m: { t: number; line: Phaser.GameObjects.Rectangle; handle: Phaser.GameObjects.Rectangle; way?: Phaser.GameObjects.Graphics; put?: () => void } = { t: t0, line, handle };
       const place = () => { const x = X0 + m.t * PXS; line.setX(x); handle.setX(x); };
       handle.on("drag", (_p: Phaser.Input.Pointer, dragX: number) => {
         let t = Phaser.Math.Clamp((dragX - X0) / PXS, 0, STRIP.seconds);
@@ -197,6 +197,7 @@ export class LabFall extends Phaser.Scene {
         else m.way?.setVisible(true);
       });
       place();
+      m.put = place;
       return m;
     });
     const show = () => readout.setText(`Δt = ${Math.abs(marks[1].t - marks[0].t).toFixed(2)} s`);
@@ -223,6 +224,13 @@ export class LabFall extends Phaser.Scene {
           this.hint("*Measure from the cry to the thud. Not the thunder.");
         }
       });
+      // stage shortcut (?judges only): drop both markers on the spikes, the presenter still locks in
+      if (JUDGES) this.button(W / 2 + 104, 252, "Show answer", () => {
+        [marks[0].t, marks[1].t] = [rec.cry_at, rec.thud_at];
+        for (const m of marks) { m.put?.(); m.way?.setVisible(false); }
+        show();
+        ready();
+      }, "#55361A");
     });
   }
 
@@ -384,11 +392,16 @@ ${b.h} m`, 7, "#F2E9CF").setLineSpacing(1);
           style="width:3.6em;font:inherit;padding:1px 4px;border:1.5px solid #0E1938;background:${readonly ? "#E6DCC0" : "#FFFBEF"};color:#0E1938;border-radius:3px">`;
       form.innerHTML = `<div style="font-weight:700;color:#C9302A">Notebook</div>
         <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">h = 1/2 × ${box("nb-g", String(this.g), true)} × ${box("nb-t", String(this.gap), true)} × ${box("nb-t2", String(this.gap), true)} = ${box("nb-h")} m</div>
-        <button type="submit" style="font:inherit;padding:4px;border:2px solid #0E1938;background:#C9302A;color:#fff;border-radius:4px;cursor:pointer">Check</button>`;
+        <div style="display:flex;gap:6px"><button type="submit" style="flex:1;font:inherit;padding:4px;border:2px solid #0E1938;background:#C9302A;color:#fff;border-radius:4px;cursor:pointer">Check</button>
+        ${JUDGES ? `<button type="button" id="nb-show" style="font:inherit;padding:4px 8px;border:2px solid #0E1938;background:#55361A;color:#fff;border-radius:4px;cursor:pointer">Show answer</button>` : ""}</div>`;
       ["pointerdown", "keydown", "keyup"].forEach((ev) => form.addEventListener(ev, (e) => e.stopPropagation()));
       const remove = overlay(this, form, 120, 110, 240, 92);
       this.input.keyboard!.enabled = false;
       setTimeout(() => (document.getElementById("nb-h") as HTMLInputElement | null)?.focus(), 50);
+      // stage shortcut (?judges only): write the worked answer in, the presenter still presses Check
+      document.getElementById("nb-show")?.addEventListener("click", () => {
+        (document.getElementById("nb-h") as HTMLInputElement).value = String(Number((0.5 * this.g * this.gap * this.gap).toFixed(2)));
+      });
       form.onsubmit = async (e) => {
         e.preventDefault();
         const height = calc((document.getElementById("nb-h") as HTMLInputElement).value);

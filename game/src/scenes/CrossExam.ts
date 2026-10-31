@@ -98,11 +98,13 @@ export class CrossExam extends Phaser.Scene {
     pg.fillStyle(0xf2e9cf, 1).fillRect(8, 196, W - 16, 68);
     pg.lineStyle(2, 0x0e1938, 1).strokeRect(8, 196, W - 16, 68);
     panel.add(pg);
-    this.order.forEach((who, i) => {
-      const t = this.add.text(16 + i * 62, 199, api.current!.suspects[who].name, { fontFamily: FONT, fontSize: "9px", color: "#F2E9CF", backgroundColor: "#0E1938" })
+    let tx = 16;
+    this.order.forEach((who) => {
+      const t = this.add.text(tx, 199, api.current!.suspects[who].name, { fontFamily: FONT, fontSize: "9px", color: "#F2E9CF", backgroundColor: "#0E1938" })
         .setPadding(6, 1, 6, 1).setInteractive({ useHandCursor: true });
       t.on("pointerover", () => sfx("hover"));
       t.on("pointerdown", () => { if (!this.busy && this.sel.who !== who) this.pick(who, 0); });
+      tx += t.width + 6;                                // lay tabs out by their real width, with a gap
       this.tabs[who] = t;
       panel.add(t);
     });

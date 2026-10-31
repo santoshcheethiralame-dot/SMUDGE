@@ -1,0 +1,55 @@
+{
+ "id": "gen_work",
+ "title": "The Crushed Canvas",
+ "chapter": "Chapter 9: Work",
+ "law": "Work",
+ "formula": "W = F * s",
+ "out": {
+  "sym": "W",
+  "name": "work done",
+  "unit": "J"
+ },
+ "ins": [
+  {
+   "sym": "F",
+   "name": "force",
+   "unit": "N",
+   "values": [
+    10,
+    20,
+    30,
+    40
+   ]
+  },
+  {
+   "sym": "s",
+   "name": "displacement",
+   "unit": "m",
+   "values": [
+    2,
+    4,
+    5,
+    8
+   ]
+  }
+ ],
+ "thing": "art studio",
+ "item": "canvas",
+ "crime": "During art class a heavy easel was slammed into a canvas, tearing it. Each student claimed how much work they did moving the easel, and one lied.",
+ "deed": "you shoved the easel into the canvas, ripping it, then reported a false amount of work.",
+ "oath": "My work on the easel was {value} {unit}. Check the board.",
+ "measure": "The lab reads each student's applied force and the distance the easel moved from the sensor log.",
+ "hint": "*Work equals force times distance. Multiply the two numbers you measured.",
+ "arrive": [
+  "The art studio wall shows a shredded canvas. The Baron erased the law of work.",
+  "Three students. Each one told the teacher how much work they did moving the easel.",
+  "Question them, then check the sensor log."
+ ],
+ "inspect": [
+  "Fingerprints on the easel handle and torn canvas indicate a push.",
+  "The sensor log lists force and displacement for each attempt. Work reveals the liar."
+ ],
+ "confession": "Okay, I slammed the easel into the canvas and fudged my work number. The Baron said work couldn't be checked any more.",
+ "borrow": "heat",
+ "num": 50
+}

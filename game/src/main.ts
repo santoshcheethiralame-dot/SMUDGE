@@ -27,6 +27,8 @@ const game = new Phaser.Game({
   input: { activePointers: 2 },
   scene: [Boot, Title, Prologue, HQ, EndCard, CaseMap, District, Lab, LabMotion, CaseLab, CrossExam, Restore, CaseSolved, Bench],
 });
+// dev builds only: the game on window, for poking at scenes from the console
+if (import.meta.env.DEV) (window as unknown as { game: Phaser.Game }).game = game;
 
 // text draws its texture at Z, so through the zoomed camera every glyph pixel is a screen pixel
 const factory = Phaser.GameObjects.GameObjectFactory.prototype as unknown as { text: (...a: unknown[]) => Phaser.GameObjects.Text };

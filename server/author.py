@@ -48,6 +48,8 @@ Rules:
   2 decimal places. consts (optional) holds fixed constants such as {{"g": 10}}.
 - oath: under 70 characters, with {{value}} and {{unit}} in it. Every other line under 130 characters.
 - arrive: 3 lines, inspect: 2 lines. Never use a suspect's name anywhere, never hint who did it.
+- thing: the one object each suspect owns and swears about, a short noun ("crate", "trolley"); the oath
+  speaks of "my <thing>".
 - deed: second person, what the culprit secretly did. confession: first person, the culprit owning up.
 - borrow: the district whose cast fits the story best, one of:
 {casts}
@@ -249,6 +251,7 @@ def run(job: Job, chat=llm.chat_json, detective=None):
 
 
 def start(prompt: str) -> Job:
-    job = JOBS[(j := Job(prompt)).id] = j
+    job = Job(prompt)
+    JOBS[job.id] = job
     threading.Thread(target=run, args=(job,), daemon=True).start()
     return job

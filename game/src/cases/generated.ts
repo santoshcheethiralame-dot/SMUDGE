@@ -17,6 +17,8 @@ export interface Spec {
 }
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+/** "W = F * s" as it is printed in a textbook: "W = F × s"; powers as superscripts. */
+export const pretty = (f: string) => f.replace(/\s*(\*\*|\^)\s*2/g, "²").replace(/\s*(\*\*|\^)\s*3/g, "³").replace(/\s*\*\s*/g, " × ");
 
 export function fromSpec(s: Spec): CaseDef {
   const base = CASES[s.borrow];
@@ -32,9 +34,9 @@ export function fromSpec(s: Spec): CaseDef {
     labSteps: [
       { kind: "say", lines: [
         { who: "foot", expr: "happy", text: `Lab time! ${s.measure}` },
-        { who: "foot", expr: "neutral", text: `The law: ${s.formula}. Work out each ${s.thing}'s ${s.out.name}, then check it against what they swore.` },
+        { who: "foot", expr: "neutral", text: `The law: ${pretty(s.formula)}. Work out each ${s.thing}'s ${s.out.name}, then check it against what they swore.` },
       ] },
-      { kind: "notebook", hint: s.hint, note: consts ? `${s.formula}   (${consts})` : s.formula,
+      { kind: "notebook", hint: s.hint, note: consts ? `${pretty(s.formula)}   (${consts})` : pretty(s.formula),
         fields: (c: CaseData) => ids.flatMap((sid) => [
           ...s.ins.map((i) => ({ key: `${i.sym}_${sid}`, label: `${name(sid)}: ${i.name}`, unit: i.unit, given: (c.ins as Record<string, Record<string, number>>)[sid][i.sym] })),
           { key: `out_${sid}`, label: `${name(sid)}: ${s.out.name}`, unit: s.out.unit },
@@ -47,7 +49,7 @@ export function fromSpec(s: Spec): CaseDef {
     inspect: say(s.inspect, ["smudge", "foot"]),
     toLab: { who: "smudge", expr: "determined", text: `To the lab. Three ${s.thing}s, one formula.` },
     afterLab: { who: "foot", expr: "happy", text: `Every ${s.thing} has its ${s.out.name} now. Call them to the stage and check their stories.` },
-    checklist: [`Inspect the ${s.item}`, `Work out the ${s.out.name}s`],
+    checklist: [`Inspect the ${s.item}`, `Work out each ${s.out.name}`],
     stageLabel: cap(`the ${s.item}`),
     badge: (ev) => ev.badge,
     miss: () => `*That ${s.thing} matches what they swore. Find the one that doesn't.`,
@@ -55,7 +57,7 @@ export function fromSpec(s: Spec): CaseDef {
     confess: Object.fromEntries(ids.map((sid) => [sid, [{ expr: "shocked", text: "...The numbers. Of course it was the numbers." }, { expr: "nervous", text: s.confession }]])),
     caught: undefined,
     point: undefined,
-    restore: { glyphs: s.formula.split(""), sub: `The law of ${s.law.toLowerCase()} is back in the book.`, card: s.formula,
+    restore: { glyphs: [...pretty(s.formula)], sub: `The law of ${s.law.toLowerCase()} is back in the book.`, card: pretty(s.formula),
       cardSub: `${s.law} · ${s.chapter.split(":")[0]}` },
     solved: (who) => `${who} lied about the ${s.out.name}. ${s.law} proved it.`,
   };

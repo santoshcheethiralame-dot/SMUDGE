@@ -85,3 +85,14 @@ def test_the_api_serves_jobs_and_authored_specs(monkeypatch):
     assert client.get("/api/author/j1").json()["status"] == "running"
     assert client.get("/api/author/nope").status_code == 404
     assert {"gen_pressure", "gen_speed"} <= {s["id"] for s in client.get("/api/kits/generated").json()}
+
+
+def test_start_runs_the_job_in_the_background(monkeypatch):
+    ran = []
+    monkeypatch.setattr(author, "run", lambda job: ran.append(job.prompt))
+    job = author.start("speed")
+    assert author.JOBS[job.id] is job
+    for t in author.threading.enumerate():
+        if t is not author.threading.current_thread() and t.daemon:
+            t.join(1)
+    assert ran == ["speed"]

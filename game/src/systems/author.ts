@@ -1,6 +1,6 @@
 // "Author a case": a teacher types one line and watches the agents write, prove and gate a new case
 // (server/author.py), then plays it. Opened from the casebook map, or straight away with ?author.
-import { addSpec, type Spec } from "../cases/generated";
+import { addSpec, pretty, type Spec } from "../cases/generated";
 import type { TraceEvent } from "./observatory";
 
 const esc = (s: unknown) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -98,7 +98,6 @@ export function openAuthor(): Promise<string | null> {
       if (!prompt) return;
       $<HTMLButtonElement>("au-go").disabled = true;
       $("au-out").innerHTML = "";
-      draw([], "running");
       let job: string;
       try {
         const r = await fetch("/api/author", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt }) });
@@ -110,6 +109,7 @@ export function openAuthor(): Promise<string | null> {
         return;
       }
       const events: TraceEvent[] = [];
+      draw(events, "running");
       timer = window.setInterval(async () => {
         let page: { status: string; next: number; events: TraceEvent[]; spec: Spec | null; error: string | null };
         try { page = await (await fetch(`/api/author/${job}?since=${events.length}`)).json(); } catch { return; }
@@ -126,7 +126,7 @@ export function openAuthor(): Promise<string | null> {
         const res = await fetch("/api/kits/generated").then((r) => r.json()).catch(() => []) as Spec[];
         const kit = addSpec(res.find((x) => x.id === s.id) ?? { ...s, cast: {} });
         $("au-out").innerHTML = `<div class="done"><div class="eyebrow" style="color:#C9302A">Gated · ready to play</div>
-          <h3>${esc(s.title)}</h3><div class="f">${esc(s.formula)}</div><div>${esc(s.chapter)} · ${esc(s.crime)}</div>
+          <h3>${esc(s.title)}</h3><div class="f">${esc(pretty(s.formula))}</div><div>${esc(s.chapter)} · ${esc(s.crime)}</div>
           <div class="row"><button type="button" class="go" id="au-play">Play it ▸</button></div></div>`;
         $("au-play").onclick = () => close(kit);
         $("au-play").focus();

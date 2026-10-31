@@ -494,5 +494,21 @@
   "no_lab": "bob",
   "with_lab": "karat",
   "passed": true
+ },
+ {
+  "kit": "gen_work",
+  "seed": 1000,
+  "culprit": "ferris",
+  "no_lab": "al",
+  "with_lab": "ferris",
+  "passed": true
+ },
+ {
+  "kit": "gen_work",
+  "seed": 1001,
+  "culprit": "al",
+  "no_lab": "ferris",
+  "with_lab": "al",
+  "passed": true
  }
 ]

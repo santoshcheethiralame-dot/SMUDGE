@@ -478,5 +478,21 @@
   "no_lab": "rivet",
   "with_lab": "varnish",
   "passed": true
+ },
+ {
+  "kit": "gen_pressure",
+  "seed": 1000,
+  "culprit": "cyl",
+  "no_lab": "karat",
+  "with_lab": "cyl",
+  "passed": true
+ },
+ {
+  "kit": "gen_pressure",
+  "seed": 1001,
+  "culprit": "karat",
+  "no_lab": "bob",
+  "with_lab": "karat",
+  "passed": true
  }
 ]

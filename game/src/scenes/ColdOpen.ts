@@ -11,7 +11,9 @@ let played = false;
 /** True once the cold open has played (or been skipped) in this page load. */
 export const coldOpenDone = () => played;
 
-const TOWER = { x: 340, top: 46 };
+// bx, top: the clock in manor_glitch (x 510, y 27) and on screen at 2x; TILT: how far below it the shot starts
+const TOWER = { x: 340, bx: 510, top: 54 };
+const TILT = 80;
 
 export class ColdOpen extends Phaser.Scene {
   private synths: Tone.ToneAudioNode[] = [];
@@ -25,17 +27,17 @@ export class ColdOpen extends Phaser.Scene {
     this.over = false;
     makePixel(this);
     this.add.rectangle(0, 0, W, H, 0x03040c).setOrigin(0).setDepth(0);
-    const sky = this.add.rectangle(0, 0, W, H, 0xb8c4dc).setOrigin(0).setAlpha(0).setDepth(1);
-
-    // the tower, a dark shape; the clock face glows a little
-    const g = this.add.graphics().setDepth(2);
-    g.fillStyle(0x0a0d22).fillRect(TOWER.x - 34, TOWER.top, 68, H - TOWER.top);
-    g.fillTriangle(TOWER.x - 40, TOWER.top, TOWER.x, TOWER.top - 40, TOWER.x + 40, TOWER.top);
-    const face = this.add.circle(TOWER.x, TOWER.top + 24, 15, 0xf0e6bc, 0.55).setDepth(3);
-    this.add.graphics().setDepth(3).lineStyle(1, 0x0a0d22).lineBetween(TOWER.x, TOWER.top + 24, TOWER.x, TOWER.top + 12);
-    // the figure on a balcony: small, dark, and no balcony drawn, so nobody knows which
-    const figure = this.add.graphics().setDepth(4).setAlpha(0);
-    figure.fillStyle(0x03040c).fillRect(TOWER.x - 4, 138, 8, 20).fillCircle(TOWER.x, 134, 5);
+    // the manor's own tower at 2x, held in shadow; the shot tilts up from the courtyard to the clock
+    const g = this.add.container(0, -TILT).setDepth(2);
+    g.add(this.add.image(TOWER.x - TOWER.bx * 2, 0, "manor_glitch").setOrigin(0).setScale(2));
+    const shade = this.add.rectangle(0, 0, W, H, 0x03040c, 0.55).setOrigin(0).setDepth(2.5);
+    const sky = this.add.rectangle(0, 0, W, H, 0xb8c4dc).setOrigin(0).setAlpha(0).setDepth(2.6).setBlendMode(Phaser.BlendModes.ADD);
+    const face = this.add.circle(TOWER.x, TOWER.top, 22, 0xf0e6bc, 0.25).setBlendMode(Phaser.BlendModes.ADD);
+    // the figure, a silhouette on the clock ledge: no balcony, so nobody knows which
+    const figure = this.add.graphics().setAlpha(0);
+    figure.fillStyle(0x03040c).fillRect(TOWER.x - 5, TOWER.top + 4, 10, 22).fillCircle(TOWER.x, TOWER.top - 1, 6);
+    g.add([face, figure]);
+    this.tweens.add({ targets: g, y: 0, duration: 8600, ease: "Sine.easeInOut" });
 
     this.add.particles(0, 0, "px", {
       x: { min: 0, max: W + 40 }, y: -10, speedY: { min: 320, max: 400 }, speedX: -50, lifespan: 800, frequency: 16, quantity: 2,
@@ -43,19 +45,21 @@ export class ColdOpen extends Phaser.Scene {
     }).setDepth(6);
 
     const flash = (ms: number) => {
-      sky.setAlpha(0.92);
+      sky.setAlpha(0.35);
+      shade.setAlpha(0);
       this.tweens.add({ targets: sky, alpha: 0, duration: ms, ease: "Quad.easeOut" });
+      this.tweens.add({ targets: shade, alpha: 0.55, duration: ms * 1.6, ease: "Quad.easeIn" });
     };
 
     // the timeline, in ms from the start
     const at = (ms: number, fn: () => void) => this.time.delayedCall(ms, () => { if (!this.over) fn(); });
-    at(800, () => this.tweens.add({ targets: face, alpha: 0.85, duration: 1200 }));
+    at(800, () => this.tweens.add({ targets: face, alpha: 0.5, duration: 1200 }));
     for (let n = 0; n < 12; n++) at(1600 + n * 600, () => { this.bell(n === 11); this.tweens.add({ targets: face, scale: 1.12, duration: 90, yoyo: true }); });
     at(9200, () => { figure.setAlpha(1); flash(420); sfx("rumble"); });
     at(9800, () => figure.setAlpha(0));
     at(10600, () => this.cry());
     at(12100, () => { sfx("thunk"); this.cameras.main.shake(120, 0.01); });
-    at(12400, () => this.tweens.add({ targets: [face, g], alpha: 0, duration: 200 }));
+    at(12400, () => this.tweens.add({ targets: g, alpha: 0, duration: 200 }));
     at(13000, () => {
       const title = this.add.text(W / 2, H / 2, "THE MIDNIGHT FALL", { fontFamily: DISPLAY, fontSize: "26px", color: "#F2E9CF" })
         .setOrigin(0.5).setAlpha(0).setDepth(20);

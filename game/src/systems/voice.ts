@@ -1,19 +1,10 @@
 // Talking to the suspects out loud: hold-to-talk speech recognition in, browser speech synthesis out.
 // Both are on-device or browser-provided and free. Typing always works; without recognition the mic hides.
 import { voiceOf } from "../audio/voices";
-
-type Mode = "off" | "on" | "suspects";
-const KEY = "smudge.voice";
-
-export function voiceMode(): Mode {
-  try { return (localStorage.getItem(KEY) as Mode) || "suspects"; } catch { return "suspects"; }
-}
-export function setVoiceMode(m: Mode) {
-  try { localStorage.setItem(KEY, m); } catch { /* private window: this session only */ }
-}
+import { isMuted } from "../audio";
 
 const Rec: any = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
-export const canListen = () => Boolean(Rec) && voiceMode() !== "off";
+export const canListen = () => Boolean(Rec);
 
 /** Start listening; onText gets interim and final transcripts. Call the returned function to stop. */
 export function listen(onText: (text: string, final: boolean) => void, onError?: (why: string) => void): () => void {
@@ -42,9 +33,13 @@ function pickVoice(who: string): SpeechSynthesisVoice | null {
   const en = all.filter((x) => /^en/i.test(x.lang));
   const pool = en.length ? en : all;
   if (!pool.length) return null;
+  // the neural voices (Edge "Natural"/"Online", Chrome "Google") sound human; the rest are the robotic offline ones
+  const quality = (x: SpeechSynthesisVoice) => (/natural|online/i.test(x.name) ? 0 : /google/i.test(x.name) ? 1 : 2);
+  const good = pool.filter((x) => quality(x) < 2);
+  const ranked = (good.length >= 2 ? good : pool).slice().sort((x, y) => quality(x) - quality(y) || x.name.localeCompare(y.name));
   const fixed: Record<string, number> = { smudge: 0, foot: 1 };
   const h = [...who].reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7) >>> 0;
-  return pool[(fixed[who] ?? 2 + (h % Math.max(1, pool.length - 2))) % pool.length];
+  return ranked[(fixed[who] ?? 2 + (h % Math.max(1, ranked.length - 2))) % ranked.length];
 }
 if ("speechSynthesis" in window) speechSynthesis.getVoices();   // voices load lazily in Chrome; warm the list
 
@@ -54,10 +49,9 @@ export const speaking = () => talking;
 
 /** Speak a reply in this speaker's voice: pitch follows their blip voice, deep voices also slow down. */
 export function speak(who: string, text: string): Promise<void> {
-  const mode = voiceMode();
-  if (mode === "off" || !("speechSynthesis" in window) || (mode === "suspects" && (who === "smudge" || who === "foot"))) {
-    return Promise.resolve();
-  }
+  // everyone is voiced; the speaker button / M key (the game's mute) silences speech too
+  text = text.replace(/^\*+\s*/, "");
+  if (!("speechSynthesis" in window) || isMuted() || !text.trim()) return Promise.resolve();
   hush();
   const v = voiceOf(who);
   const mid = (v.lo + v.hi) / 2;
@@ -84,25 +78,4 @@ export function hush() {
   finish = null;
   talking = false;
   f?.();
-}
-
-const LABEL: Record<Mode, string> = { on: "🗣 Voices: all", suspects: "🗣 Voices: suspects", off: "🗣 Voices: off" };
-const NEXT: Record<Mode, Mode> = { suspects: "on", on: "off", off: "suspects" };
-
-/** A small corner button that cycles the voice setting. Top-left, so the docked Observatory never covers it. */
-export function installVoiceToggle() {
-  const b = document.createElement("button");
-  b.type = "button";
-  b.style.cssText = `position:fixed;top:max(10px,env(safe-area-inset-top,0px));left:max(10px,env(safe-area-inset-left,0px));z-index:49;
-    font:600 12px/1 "DotGothic16",monospace;padding:6px 9px;border-radius:3px;border:2px solid #0E1938;background:#F2E9CF;color:#0E1938;cursor:pointer`;
-  const show = () => { b.textContent = LABEL[voiceMode()]; };
-  b.onclick = () => { setVoiceMode(NEXT[voiceMode()]); if (voiceMode() === "off") hush(); show(); };
-  show();
-  document.body.appendChild(b);
-}
-
-// ui.ts imports this module, so the toggle installs itself: no hook needed in main.ts.
-if (typeof document !== "undefined") {
-  if (document.body) installVoiceToggle();
-  else document.addEventListener("DOMContentLoaded", installVoiceToggle, { once: true });
 }

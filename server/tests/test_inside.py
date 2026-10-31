@@ -86,3 +86,15 @@ def test_every_scripted_leak_is_blocked_by_the_real_filter(kit, seed):
     cid = _new(kit, seed)
     out = client.post(f"/api/case/{cid}/filtertest").json()
     assert len(out) == 3 and all(o["rule"] and "rather not guess" in o["shown"] for o in out), out
+
+
+def test_trace_feeds_the_observatory_every_step_of_a_reply():
+    from tracebus import problems
+    cid = _new()
+    assert client.get(f"/api/case/{cid}/trace").json()["events"] == []
+    client.post("/api/ask", json={"case_id": cid, "suspect": "mu", "question": "How fast were you going?"})
+    body = client.get(f"/api/case/{cid}/trace?since=0").json()
+    assert [(e["agent"], e["step"]) for e in body["events"]] == [("mu", "draft"), ("mu", "firewall"), ("mu", "reply")]
+    assert body["next"] == 3 and all(problems(e) == [] for e in body["events"])
+    assert set(body["stress"]) == {"dash", "rolla", "mu"}
+    assert client.get(f"/api/case/{cid}/trace?since=3").json()["events"] == []

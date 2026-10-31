@@ -10,6 +10,7 @@ import agents
 import kits
 import llm
 from agents import SuspectAgent, Footnote
+from tracebus import Trace
 from truth import new_case, check_constraints, check_lab, present
 
 app = FastAPI(title="Smudge agents")
@@ -79,7 +80,11 @@ def case_new(req: NewCase):
             break
         seed = None
     cid = f"c{case.seed}-{random.randrange(10**6)}"
-    CASES[cid] = {"case": case, "agents": {sid: SuspectAgent(case, sid) for sid in kit.suspects},
+    trace = Trace()
+    agents_ = {sid: SuspectAgent(case, sid) for sid in kit.suspects}
+    for a in agents_.values():
+        a.trace = trace
+    CASES[cid] = {"case": case, "agents": agents_, "trace": trace,
                   "hints": [], "labs": [], "presents": [], "baits": []}
     return {"case_id": cid, "title": kit.title, "place": kit.place, **case.public(),
             "suspects": {sid: {"name": s["name"], "role": s["role"]} for sid, s in kit.suspects.items()}}
@@ -195,6 +200,15 @@ def inside(cid: str):
         "lab": c["labs"][-6:],
         "presents": c["presents"][-6:],
     }
+
+
+@app.get("/api/case/{cid}/trace")
+def trace(cid: str, since: int = 0):
+    """The Observatory's live feed: every agent event from `since` on. Stress is CALM until the stress model lands."""
+    c = _case(cid)
+    t = c["trace"]
+    return {"next": len(t.events), "events": t.since(since),
+            "stress": {sid: {"level": 0, "band": "CALM"} for sid in c["agents"]}}
 
 
 @app.post("/api/case/{cid}/filtertest")

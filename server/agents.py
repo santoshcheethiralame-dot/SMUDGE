@@ -20,6 +20,7 @@ SUSPECT_TIER = "talk"
 STYLE = ("Reply in character in 1 to 3 short sentences (under 45 words). Witty but kind; the players are 14 to 16. "
          "Nobody saw who did it: if asked, say you don't know, and never name, hint at or blame anyone; plain gossip "
          "you know is fine. No stage directions, no asterisks, no emojis, never mention being an AI or a game.")
+SHORT = "Reply in ONE short sentence of at most 15 words. " + STYLE.split(". ", 2)[2]
 # pointing at another suspect, as a guess or as fact. Only the guilty would want to, so nobody may: it would be a tell.
 BLAME = re.compile(r"\b(maybe|might have|must have|could have|probably|i bet|suspicious|suspect|blame|did it|"
                    r"is the (culprit|thief|forger)|keep an eye on|fingers?)\b", re.I)
@@ -52,6 +53,7 @@ class SuspectAgent:
         self.ledger: list[tuple[str, str]] = []
         self.log: list[dict] = []          # every reply: the model's raw text, what the player saw, and why
         self.last_rule: str | None = None
+        self.trace = None                  # a tracebus.Trace when the case is live, so the Observatory sees every step
 
     def system(self):
         facts, secret = self.kit.knowledge(self.case, self.sid)
@@ -59,7 +61,7 @@ class SuspectAgent:
         return (f"You are {self.s['name']}, the {self.s['role']} of {self.kit.place}, a town that lives inside a school textbook. "
                 f"Personality: {self.s['persona']}\nFACTS YOU KNOW:\n- " + "\n- ".join(facts) +
                 (f"\n{secret}" if secret else "") +
-                f"\nThings you already said (never contradict them):\n{said}\n{STYLE}")
+                f"\nThings you already said (never contradict them):\n{said}\n{SHORT if self.kit.short else STYLE}")
 
     def ask(self, question: str, patience: float = 0.0):
         meta: dict = {}
@@ -72,6 +74,10 @@ class SuspectAgent:
         text, filtered = self.filter(raw)
         if filtered:
             source += "+filtered"
+        if self.trace is not None:
+            self.trace.emit(self.sid, "suspect", "draft", meta=meta, text=raw)
+            self.trace.emit(self.sid, "suspect", "firewall", "block" if filtered else "pass", rule=self.last_rule)
+            self.trace.emit(self.sid, "suspect", "reply", question=question[:240], text=text)
         self.ledger.append((question[:120], text))
         self.log.append({"q": question[:240], "raw": raw, "answer": text, "source": source, "rule": self.last_rule,
                          "provider": meta.get("provider"), "model": meta.get("model"), "cached": meta.get("cached", False),
@@ -92,8 +98,10 @@ class SuspectAgent:
                           else None)
         if self.last_rule:
             return "I'd rather not guess, detective. Facts are your job.", True
-        text = re.sub(r"\*[^*]{0,40}\*\s*", "", text)        # no *stage directions*
-        return text.strip().strip('"'), False
+        text = re.sub(r"\*[^*]{0,40}\*\s*", "", text).strip().strip('"')        # no *stage directions*
+        if self.kit.short and len(text.split()) > 15:
+            text = re.split(r"(?<=[.!?])\s", text)[0]      # the cap is code's job, not the prompt's: keep the first sentence
+        return text, False
 
     def names_another(self, text: str):
         return any(re.search(rf"\b{re.escape(s['name'])}\b", text, re.I) for sid, s in self.kit.suspects.items() if sid != self.sid)

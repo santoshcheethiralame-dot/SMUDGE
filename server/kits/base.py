@@ -28,6 +28,7 @@ class Kit:
     gossip: dict = {}        # sid -> sid they know one true fact about
     hints: dict = {}         # lab step -> safe fallback hint, used when the model's hint is unusable
     detective_questions: list = []  # what the release-gate detective asks every suspect
+    short = False            # suspects answer in one short sentence (the low-text demo case)
 
     # --- the truth: plain code, seeded ---------------------------------------
     def generate(self, rng):

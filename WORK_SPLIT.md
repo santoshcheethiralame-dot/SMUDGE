@@ -16,7 +16,7 @@ Read [the case spec](docs/superpowers/specs/2026-10-31-midnight-fall.md) whoever
 | Mounika | [content plan](docs/superpowers/plans/2026-10-31-midnight-fall-content.md) | Task 1: tighten the lines, due in 3 hours |
 
 Santosh's list, in order:
-1. `server/kits/fall.py` with tests; replies match the fixture exactly. The suspects' reply cap is 15 words.
+1. ~~`server/kits/fall.py` with tests; replies match the fixture exactly; 15-word reply cap.~~ Done.
 2. Gate the kit; demo seed 1000 must pass (culprit Lady Varnish).
 3. Art through the pipeline: the manor courtyard, the two lab backdrops, three suspects, the sack and the sheet
    (spec §7).

@@ -109,6 +109,10 @@ def _ao(world, p, n):
     return np.clip(1 - 0.16 * occ, 0, 1)
 
 
+# pixels per world unit. 1 = the game's sprites; 2 = high-res renders (the trailer). Set SMUDGE_SCALE=2.
+SCALE = int(os.environ.get("SMUDGE_SCALE", "1"))
+
+
 def render(world, materials, width, height, centre, lights=(), ss=2, top=120.0,
            key=1.0, ambient=0.12, sky=None, steps=140, y_off=0):
     """Returns RGBA uint8 (h, w, 4), plus depth and material maps at pixel res.
@@ -117,9 +121,11 @@ def render(world, materials, width, height, centre, lights=(), ss=2, top=120.0,
     materials: id -> dict(ramp=[hex...], pattern=fn(p, n) -> tone shift array,
                emissive=bool, gloss=float, colour_fn=fn(p, n)->ramp index override or None)
     """
+    wu, hu = width, height                       # world units across the frame
+    width, height = int(round(wu * SCALE)), int(round(hu * SCALE))   # pixels from here on
     W, H = width * ss, height * ss
-    xs = (np.arange(W) + 0.5) / ss - width / 2 + centre[0]
-    ys = centre[1] + (height / 2 - (np.arange(H) + 0.5) / ss)
+    xs = (np.arange(W) + 0.5) / (ss * SCALE) - wu / 2 + centre[0]
+    ys = centre[1] + (hu / 2 - (np.arange(H) + 0.5) / (ss * SCALE))
     uu, vv = np.meshgrid(xs, ys)
     o = uu.reshape(-1, 1) * RIGHT + vv.reshape(-1, 1) * UP
     # start each ray where it crosses the top of the world (y = top); may be behind the screen plane
@@ -355,13 +361,13 @@ def moon(sky, cx, cy, r, hex_lit="#FFF2C8", hex_dark="#C9B98A", halo="#5A6A9A"):
 
 def _strip(args):
     import importlib
-    mod, y0, y1, kw = args
+    mod, y0, y1, kw = args                       # y0, y1 in output pixels
     scene = importlib.import_module(mod).build(**kw)
     prep(scene["materials"])
     W, H = scene["width"], scene["height"]
     cu, cv = scene["centre"]
-    cv_strip = cv + H / 2 - (y0 + y1) / 2
-    img, dep, mat = render(scene["world"], scene["materials"], W, y1 - y0, (cu, cv_strip),
+    cv_strip = cv + H / 2 - (y0 + y1) / 2 / SCALE
+    img, dep, mat = render(scene["world"], scene["materials"], W, (y1 - y0) / SCALE, (cu, cv_strip),
                            lights=scene.get("lights", ()), ss=scene.get("ss", 2), top=scene.get("top", 120.0),
                            key=scene.get("key", 1.0), ambient=scene.get("ambient", 0.12),
                            steps=scene.get("steps", 140), y_off=y0)
@@ -373,7 +379,7 @@ def render_parallel(mod, procs=11, strip=12, **kw):
     import importlib
     from multiprocessing import Pool
     scene = importlib.import_module(mod).build(**kw)
-    W, H = scene["width"], scene["height"]
+    W, H = scene["width"] * SCALE, scene["height"] * SCALE
     jobs = [(mod, y, min(y + strip, H), kw) for y in range(0, H, strip)]
     img = np.zeros((H, W, 4), np.uint8)
     dep = np.full((H, W), np.inf)
@@ -385,10 +391,15 @@ def render_parallel(mod, procs=11, strip=12, **kw):
             mat[y0:y0 + im.shape[0]] = mt
     img = outline(img, dep, mat, prep(scene["materials"]))
     if scene.get("sky") is not None:
+        sky = scene["sky"]
+        if SCALE > 1:                            # skies are painted in world pixels; keep their dither crisp
+            sky = np.repeat(np.repeat(sky, SCALE, 0), SCALE, 1)
         bg = img[:, :, 3] == 0
-        img[bg] = scene["sky"][bg]
+        img[bg] = sky[bg]
     for mid, colour, radius, strength in scene.get("bloom", []):
-        img = bloom(img, mat == mid, colour, radius, strength)
+        img = bloom(img, mat == mid, colour, radius * SCALE, strength)
+    if scene.get("post"):                        # screen-space finish (mist, grading), in output pixels
+        img = scene["post"](img, dep, mat)
     return img, dep, mat, scene
 
 

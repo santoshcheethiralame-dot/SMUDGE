@@ -5,7 +5,7 @@ import time
 
 from PIL import Image
 
-from envrender import render_parallel
+from envrender import render_parallel, SCALE
 
 if __name__ == "__main__":
     mod = sys.argv[1]
@@ -16,6 +16,9 @@ if __name__ == "__main__":
     img, dep, mat, scene = render_parallel(mod, **kw)
     os.makedirs("out", exist_ok=True)
     im = Image.fromarray(img, "RGBA")
-    im.save(f"out/{name}.png")
-    im.resize((im.width * 3, im.height * 3), Image.NEAREST).save(f"out/{name}_x3.png")
+    if SCALE > 1:                                # high-res render: no preview, its own name
+        im.save(f"out/{name}_hd{SCALE}.png")
+    else:
+        im.save(f"out/{name}.png")
+        im.resize((im.width * 3, im.height * 3), Image.NEAREST).save(f"out/{name}_x3.png")
     print(f"{name}: {im.size} in {time.time() - t:.0f}s")

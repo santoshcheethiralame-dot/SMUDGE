@@ -3,7 +3,7 @@ import numpy as np
 
 from .. import sdf
 from .. import palette as P
-from ..palette import INK, BAND, STEEL
+from ..palette import INK, BAND, STEEL, WOOD
 from ..suspects import _Base, _legs, _put  # noqa: F401
 
 ARMOUR = P.register(["#2A3038", "#46505C", "#6A7684", "#98A4B2", "#C8D2DC"], specular="#FFFFFF")
@@ -15,6 +15,8 @@ GOWN = P.register(["#2A0614", "#460C22", "#681434", "#8E2048", "#B6345E"])
 BRASS = P.register(["#4A2E08", "#7A5012", "#AC7A22", "#D8A63E", "#F6D070"], specular="#FFF4C8")
 WAX = P.register(["#A8A090", "#C8C0AE", "#E2DCCA", "#F2EEE0", "#FFFCF4"])
 FLAME = P.register(["#B8400E", "#F07018", "#FFA830", "#FFD860", "#FFF6C0"])
+TABARD = P.register(["#3A0907", "#62110D", "#8E1A14", "#B8251C", "#DE3B2E"])
+SWEAT = P.register(["#2A5A9A", "#4A86C8", "#7AB2E8", "#AED4FA", "#E2F2FF"], specular="#FFFFFF")
 
 
 class Rivet(_Base):
@@ -30,21 +32,34 @@ class Rivet(_Base):
         d, mat = _legs(q, 3.2, 6.0), np.full(len(q), ARMOUR)
         chest = sdf.box(q - [0, 15.0, 0], (7.0, 8.0, 5.0), 2.4)
         d, mat = _put(d, mat, chest, ARMOUR)
-        belt = sdf.box(q - [0, 8.6, 0], (7.4, 1.2, 5.4), 0.6)
+        # tassets: a skirt of three overlapping plates under the belt
+        for k in range(3):
+            d, mat = _put(d, mat, sdf.box(q - [0, 7.4 - 1.6 * k, 0.2 * k], (7.0 + 0.5 * k, 0.9, 5.0 + 0.3 * k), 0.4), ARMOUR)
+        # a red tabard over the breastplate, a gold crest on it
+        tabard = sdf.box(q - [0, 14.0, 5.4], (4.6, 7.6, 0.5), 0.3)
+        crest = (q[:, 0] ** 2 + ((q[:, 1] - 16.0) * 1.15) ** 2 < 2.4 ** 2) | ((np.abs(q[:, 0]) < 0.6) & (np.abs(q[:, 1] - 12.6) < 2.4))
+        d, mat = _put(d, mat, tabard, np.where(crest, RIVETS, TABARD))
+        belt = sdf.box(q - [0, 8.6, 0], (7.4, 1.2, 5.6), 0.6)
         d, mat = _put(d, mat, belt, RIVETS)
-        for x, y in ((-4.6, 19.0), (4.6, 19.0), (-4.6, 12.0), (4.6, 12.0), (0.0, 16.0)):
-            d, mat = _put(d, mat, sdf.sphere(q, (x, y, 5.2), 0.8), RIVETS)
+        for x, y in ((-6.2, 19.0), (6.2, 19.0), (-6.2, 11.6), (6.2, 11.6)):
+            d, mat = _put(d, mat, sdf.sphere(q, (x, y, 4.6), 0.8), RIVETS)
         for s in (-1, 1):
-            pauldron = sdf.ellipsoid(q, (s * 7.6, 21.0, 0), (3.4, 2.6, 3.8))
+            pauldron = sdf.smin(sdf.ellipsoid(q, (s * 7.8, 21.0, 0), (3.8, 2.8, 4.0)), sdf.ellipsoid(q, (s * 8.4, 19.0, 0), (3.2, 2.0, 3.6)), 0.8)
             d, mat = _put(d, mat, pauldron, ARMOUR)
+        # the gorget, then the helm with a gilt ridge
+        d, mat = _put(d, mat, sdf.torus_y(q - [0, 23.2, 0], 4.6, 1.2), RIVETS)
         helm = sdf.smin(sdf.cylinder_y(q - [0, 28.0, 0], 7.4, 5.4, 2.0), sdf.sphere(q, (0, 32.0, 0), 7.0), 2.0)
         d, mat = _put(d, mat, helm, ARMOUR)
         ridge = sdf.box(q - [0, 34.0, 0], (0.8, 4.2, 6.8), 0.6)
         d, mat = _put(d, mat, ridge, RIVETS)
-        # the plume, sweeping back off the crest
-        pts = [(0, 38.0, 1.0), (0, 41.5, -1.0), (0, 43.0, -4.5), (0, 41.0, -8.0), (0, 37.5, -9.5)]
+        # a sword at his left hip, scabbard down and back, gold crossguard
+        d, mat = _put(d, mat, sdf.capsule(q, (-8.4, 8.0, 1.0), (-10.4, -3.0, 3.4), 0.9), INK)
+        d, mat = _put(d, mat, sdf.box(q - [-8.2, 9.4, 0.8], (0.6, 0.6, 2.4), 0.2), RIVETS)
+        d, mat = _put(d, mat, sdf.capsule(q, (-8.2, 9.8, 0.8), (-7.8, 12.6, 0.4), 0.55), WOOD)
+        # the plume, sweeping back off the crest, fuller than before
+        pts = [(0, 38.0, 1.0), (0, 42.0, -0.8), (0, 44.0, -4.6), (0, 42.4, -8.6), (0, 38.4, -10.8), (0, 34.0, -11.4)]
         for k, (a, c) in enumerate(zip(pts[:-1], pts[1:])):
-            d, mat = _put(d, mat, sdf.capsule(q, a, c, 2.2 - 0.35 * k), BAND)
+            d, mat = _put(d, mat, sdf.capsule(q, a, c, 2.8 - 0.36 * k), BAND)
         return self.arms(q, d, mat)
 
     def held(self, q, h, side):
@@ -68,13 +83,23 @@ class Varnish(_Base):
     def eval(self, q):
         q = self._local(q)
         d, mat = _legs(q, 3.4, 6.0), np.full(len(q), INK)
+        # her gown spills out under the frame like a skirt, so she reads as a lady from any side
+        skirt = np.maximum(sdf.ellipsoid(q, (0, 10.0, 0), (9.6, 6.4, 5.4)), q[:, 1] - 11.0)
+        frill = (np.abs(((np.arctan2(q[:, 2], q[:, 0]) * 9 / np.pi) + 100) % 1.0 - 0.5) < 0.18) & (q[:, 1] < 6.6)
+        d, mat = _put(d, mat, skirt, np.where(frill, WAX, GOWN))
+        # the frame: a deep gilt moulding with a darker inner lip, scrolls at the corners, a scallop crest
         frame = sdf.box(q - [0, 25.0, 0], (11.0, 15.0, 1.6), 0.8)
-        d, mat = _put(d, mat, frame, GILT)
-        for x in (-11.0, 11.0):
-            for y in (10.0, 40.0):
-                d, mat = _put(d, mat, sdf.sphere(q, (x, y, 0.6), 2.0), GILT)
-        crest = sdf.ellipsoid(q, (0, 41.0, 0.4), (4.0, 2.6, 1.6))
-        d, mat = _put(d, mat, crest, GILT)
+        lip = (np.abs(q[:, 0]) < 9.4) & (np.abs(q[:, 1] - 25.0) < 13.4)
+        d, mat = _put(d, mat, frame, np.where(lip, RIVETS, GILT))
+        for sx in (-1, 1):
+            for sy, y in ((-1, 10.4), (1, 39.6)):
+                scroll = sdf.smin(sdf.sphere(q, (sx * 11.2, y, 0.8), 2.1),
+                                  sdf.ellipsoid(q, (sx * 9.0, y + sy * 1.6, 1.0), (2.4, 1.2, 1.2)), 1.0)
+                d, mat = _put(d, mat, scroll, GILT)
+        for k in range(-2, 3):
+            a = k * 0.42
+            d, mat = _put(d, mat, sdf.capsule(q, (0, 40.0, 0.6), (5.6 * np.sin(a), 40.0 + 5.2 * np.cos(a), 0.6), 1.15), GILT)
+        d, mat = _put(d, mat, sdf.box(q - [0, 11.4, 1.7], (3.2, 0.9, 0.3), 0.2), BRASS)     # the nameplate
         # the canvas, painted: a dark green ground, her face in an oval, black hair piled up, the gown below
         canvas = sdf.box(q - [0, 25.0, 1.4], (8.6, 12.6, 0.4), 0.2)
         x, y = q[:, 0], q[:, 1]
@@ -111,10 +136,20 @@ class Pendle(_Base):
         d, mat = _put(d, mat, bob, BRASS)
         rim = sdf.torus_y((q - [0, 16.0, 0]) @ sdf.rot_x(np.pi / 2), 10.0, 0.9)
         d, mat = _put(d, mat, rim, RIVETS)
-        rod = sdf.box(q - [0, 35.0, 0], (1.1, 9.0, 0.9), 0.4)
+        # a lyre rod: two curved brass arms either side of the centre rod
+        rod = sdf.box(q - [0, 35.0, 0], (0.8, 9.0, 0.7), 0.3)
+        for s in (-1, 1):
+            rod = np.minimum(rod, sdf.capsule(q, (s * 1.0, 25.6, 0), (s * 3.4, 32.0, 0), 0.6))
+            rod = np.minimum(rod, sdf.capsule(q, (s * 3.4, 32.0, 0), (s * 1.0, 40.0, 0), 0.6))
         d, mat = _put(d, mat, rod, RIVETS)
-        pivot = sdf.cylinder_y((q - [0, 45.0, 0]) @ sdf.rot_x(np.pi / 2), 2.4, 1.2, 0.5)
-        d, mat = _put(d, mat, pivot, STEEL)
+        # the pivot is a little gear
+        g = (q - [0, 45.0, 0]) @ sdf.rot_x(np.pi / 2)
+        teeth = 3.0 + 0.8 * (np.sin(8 * np.arctan2(g[:, 2], g[:, 0])) > 0)
+        gear = np.maximum(np.hypot(g[:, 0], g[:, 2]) - teeth, np.abs(g[:, 1]) - 1.0)
+        d, mat = _put(d, mat, gear * 0.7, STEEL)
+        # nervous: one bead of sweat on his brow
+        drop = sdf.smin(sdf.sphere(q, (7.2, 22.6, 2.4), 1.2), sdf.sphere(q, (7.0, 24.4, 2.4), 0.45), 0.9)
+        d, mat = _put(d, mat, drop, SWEAT)
         # twelve tick marks round the bob, like the clock face he swings under
         a = np.arctan2(q[:, 1] - 16.0, q[:, 0])
         r = np.hypot(q[:, 0], q[:, 1] - 16.0)

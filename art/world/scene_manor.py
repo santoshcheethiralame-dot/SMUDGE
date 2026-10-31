@@ -13,7 +13,7 @@ Walkable courtyard: y = 0, z in [0, 30]. Balcony floors at y = 36, 80, 144 (4.9 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-from envrender import Obj, World, Light, gradient_sky, moon
+from envrender import Obj, World, Light, gradient_sky, moon, stars, BAYER4, hexrgb
 from src import sdf
 
 (COBBLE, COBBLE_D, STONE, STONE_D, SLATE, WINDOW, DARKWIN, CANDLE, WOOD, IRON, CHALK, SHEET, GHOST, BRASS, GILT,
@@ -63,12 +63,66 @@ def _arch(p, cx, cy, z, w, h, depth=0.7):
     return np.minimum(body, top)
 
 
-def _blocks(p, size=10.0, course=6.0):
-    """Mortar lines of coursed stone on any vertical face."""
+def _blocks(p, size=18.0, course=9.0):
+    """Mortar lines of coursed stone on any vertical face. Big blocks: at 1 px a unit, small ones read as scanlines."""
     y = p[:, 1] + 300
     row = np.floor(y / course)
     u = p[:, 0] + p[:, 2] + (row % 2) * size / 2 + 600
-    return (np.abs((y % course) - course / 2) > course / 2 - 0.5) | (np.abs((u % size) - size / 2) > size / 2 - 0.5)
+    return (np.abs((y % course) - course / 2) > course / 2 - 0.45) | (np.abs((u % size) - size / 2) > size / 2 - 0.45)
+
+
+def _block_tone(p, n, size=18.0, course=9.0):
+    """A tone shift per stone (-0.5..0.5), so the wall reads as stones rather than stripes."""
+    row = np.floor((p[:, 1] + 300) / course)
+    col = np.floor((p[:, 0] + p[:, 2] + (row % 2) * size / 2 + 600) / size)
+    return (np.sin(row * 12.9898 + col * 78.233) * 43758.5453) % 1.0 - 0.5
+
+
+def _lantern(p, d, mat, x, y, z):
+    """A wall lantern: candle glass in an iron cap and base, on a bracket back to the wall."""
+    d, mat = _put(d, mat, sdf.box(p - [x, y, z], (1.6, 2.4, 1.6), 0.3), CANDLE)
+    d, mat = _put(d, mat, sdf.box(p - [x, y + 3.0, z], (2.2, 0.6, 2.2), 0.2), IRON)
+    d, mat = _put(d, mat, sdf.box(p - [x, y - 2.8, z], (1.9, 0.5, 1.9), 0.2), IRON)
+    d, mat = _put(d, mat, sdf.box(p - [x, y + 4.0, z - 2.0], (0.4, 0.4, 2.4)), IRON)
+    return d, mat
+
+
+def _sky(glitch):
+    """Storm sky: moon behind a band of cloud, stars above, a far hill and a ragged treeline at the horizon."""
+    sky = gradient_sky(W, H, "#04050C", "#1C2140", glow=(590, 34, 190, "#343C66"))
+    stars(sky, 80, seed=3, ymax=120)
+    moon(sky, 590, 34, 11, hex_lit="#E4E8F6", hex_dark="#A2A8C2", halo="#46507E")
+    yy, xx = np.mgrid[0:H, 0:W].astype(float)
+    dith = BAYER4[yy.astype(int) % 4, xx.astype(int) % 4]
+    # clouds: sums of sines, kept to a band, lit from behind where they cross the moon
+    n = (np.sin(xx * 0.019 + np.sin(yy * 0.05) * 2.0) + 0.6 * np.sin(xx * 0.047 + yy * 0.09 + 1.3)
+         + 0.8 * np.sin(xx * 0.011 - yy * 0.031) + 0.4 * np.sin(xx * 0.09 - yy * 0.21))
+    band = np.exp(-((yy - 62) / 30) ** 2) + 0.5 * np.exp(-((yy - 118) / 16) ** 2)
+    c = np.clip((n * 0.32 + 0.45) * band * 1.5 - 0.3, 0, 0.9)
+    c4 = np.floor(c * 4 + dith * 0.9) / 4
+    moonlit = np.clip(1 - np.hypot(xx - 590, (yy - 34) * 1.4) / 150, 0, 1)
+    cloud = hexrgb("#1E2446") * (1 - moonlit[..., None]) + hexrgb("#5C68A2") * moonlit[..., None]
+    edge = np.clip(c4 - np.floor((c + 0.12) * 4 + dith * 0.9) / 4 + 0.25, 0, 1) * moonlit
+    col = sky[..., :3] * (1 - c4[..., None]) + cloud * c4[..., None] + hexrgb("#7A86B8") * 0.4 * edge[..., None]
+    sky[..., :3] = np.clip(col, 0, 255).astype(np.uint8)
+    # far hill, then the near treeline: flat silhouettes for depth behind the wall and the tower
+    # (the courtyard wall's top is at about y 128 on screen, so they have to rise above it to be seen)
+    hill = 104 + 9 * np.sin(xx[0] * 0.012 + 0.6) + 5 * np.sin(xx[0] * 0.041)
+    trees = 124 - 3 * np.sin(xx[0] * 0.05) - 9 * np.abs(np.sin(xx[0] * 0.21)) * (np.sin(xx[0] * 0.013) > -0.3)
+    for x in range(W):
+        sky[int(hill[x]):, x, :3] = hexrgb("#11152C")
+        sky[int(trees[x]):, x, :3] = hexrgb("#0A0C1A")
+    return sky
+
+
+def _mist(img, dep, mat):
+    """Low ground mist: a dithered cool veil that thickens toward the bottom of the frame."""
+    h, w = img.shape[:2]
+    yy, xx = np.mgrid[0:h, 0:w]
+    a = np.clip((yy - h * 0.62) / (h * 0.3), 0, 1) * 0.2 * (0.75 + 0.25 * np.sin(xx * 0.027 + yy * 0.08))
+    a = np.floor(a * 10 + BAYER4[yy % 4, xx % 4]) / 10
+    img[..., :3] = np.clip(img[..., :3] * (1 - a[..., None]) + hexrgb("#4A5684") * a[..., None], 0, 255).astype(np.uint8)
+    return img
 
 
 def materials(glitch):
@@ -80,9 +134,9 @@ def materials(glitch):
                           | (np.abs(((p[:, 2] + 600) % 3.2) - 1.6) > 1.35), COBBLE_D)),
         COBBLE_D: dict(ramp=["#08080C", "#0E0E14", "#14141C"]),
         PUDDLE: dict(ramp=["#141C34", "#1E2A4A", "#2C3C64", "#44587E"], gloss=60, spec="#C8D8FF"),
-        STONE: dict(ramp=["#1C1C26", "#2A2A36", "#383846", "#484858", "#5A5A6E", "#6E6E84"],
-                    sub=(lambda p: _blocks(p), STONE_D)),
-        STONE_D: dict(ramp=["#0A0A0E", "#101016", "#16161E"]),
+        STONE: dict(ramp=["#1A1B26", "#262836", "#343646", "#444758", "#56596E", "#6C7088"],
+                    pattern=_block_tone, pattern_gain=0.22, dither=0.12, sub=(lambda p: _blocks(p), STONE_D)),
+        STONE_D: dict(ramp=["#101119", "#161822", "#1E202C"], dither=0.1),
         SLATE: dict(ramp=["#0C0E16", "#141824", "#1C2232", "#262E42"], gloss=30, spec="#8090B0"),
         WINDOW: dict(ramp=["#E89A3C", "#F8C060", "#FFE2A0"], emissive=True),
         DARKWIN: dict(ramp=["#080A14", "#0E1224", "#161C36", "#222A4A"], gloss=40, spec="#7080B0"),
@@ -135,20 +189,29 @@ def build(glitch=True):
             for cx in (gx - 2.0, gx + 2.0):
                 d, mat = _put(d, mat, sdf.box(p - [cx, 156, z0 + 4], (1.6, 10, 1.6)), STONE)
         for wx in (-330.0, -290.0, -205.0, -175.0, -60.0, -20.0):
-            d, mat = _put(d, mat, _arch(p, wx, 66, z0 + 34.4, 5.0, 9.0), lit)
+            # a few rooms still lit by candle on the stormy night; all of them once the law is back
+            pane = CANDLE if glitch and wx in (-290.0, -175.0, -20.0) else lit
+            mull = (np.abs(p[:, 0] - wx) < 0.45) | (np.abs(p[:, 1] - 64) < 0.45)
+            d, mat = _put(d, mat, _arch(p, wx, 66, z0 + 34.4, 5.0, 9.0), np.where(mull, IRON, pane))
             d, mat = _put(d, mat, sdf.box(p - [wx, 56, z0 + 35.6], (6.4, 0.9, 1.6)), STONE)
-        # the armoury: an iron-strapped door under a shield
-        d, mat = _put(d, mat, _arch(p, -250, 16, z0 + 34.6, 9.0, 16.0), WOOD)
-        for sy in (8.0, 22.0):
-            d, mat = _put(d, mat, sdf.box(p - [-250, sy, z0 + 35.6], (9.0, 0.8, 0.5)), IRON)
-        shield = np.maximum(sdf.ellipsoid(p, (-250, 46, z0 + 35.0), (6.0, 7.5, 1.4)), 40.0 - p[:, 1] - 0.6 * np.abs(p[:, 0] + 250))
+        # the armoury: a studded door in a dressed-stone surround, crossed swords behind a shield, a lantern
+        d, mat = _put(d, mat, _arch(p, -250, 17, z0 + 34.3, 11.5, 17.5), STONE)
+        studs = (np.abs(((p[:, 0] + 600) % 4.0) - 2.0) < 0.7) & (np.abs(((p[:, 1] + 600) % 6.0) - 3.0) < 0.7)
+        d, mat = _put(d, mat, _arch(p, -250, 16, z0 + 34.8, 9.0, 16.0), np.where(studs, IRON, WOOD))
+        for s in (-1, 1):
+            d, mat = _put(d, mat, sdf.capsule(p, (-250 - 10 * s, 34, z0 + 34.9), (-250 + 10 * s, 58, z0 + 34.9), 0.7), ARMOUR)
+        shield = np.maximum(sdf.ellipsoid(p, (-250, 46, z0 + 35.6), (6.0, 7.5, 1.4)), 40.0 - p[:, 1] - 0.6 * np.abs(p[:, 0] + 250))
         d, mat = _put(d, mat, shield, np.where(np.abs(p[:, 0] + 250) < 1.0, ARMOUR, BANNER_R))
-        # the gallery: tall glazed double doors in a gilt surround
-        d, mat = _put(d, mat, _arch(p, -110, 20, z0 + 34.6, 13.0, 20.0, 0.9), GILT)
-        for sx in (-6.2, 6.2):
-            d, mat = _put(d, mat, _arch(p, -110 + sx, 19, z0 + 35.4, 5.4, 18.0), CANDLE if glitch else WINDOW)
+        d, mat = _lantern(p, d, mat, -234, 28, z0 + 38.0)
+        # the gallery: glazed double doors with leaded panes, in a slim gilt surround, lanterns either side
+        d, mat = _put(d, mat, _arch(p, -110, 20, z0 + 34.6, 12.0, 20.0, 0.9), GILT)
+        lead = (np.abs(((p[:, 0] + 600) % 3.0) - 1.5) < 0.4) | (np.abs(((p[:, 1] + 600) % 5.0) - 2.5) < 0.4)
+        for sx in (-5.8, 5.8):
+            d, mat = _put(d, mat, _arch(p, -110 + sx, 19, z0 + 35.4, 4.8, 17.0), np.where(lead, IRON, CANDLE if glitch else WINDOW))
+        for lx in (-127.0, -93.0):
+            d, mat = _lantern(p, d, mat, lx, 32, z0 + 38.0)
         return d, mat
-    objs.append(Obj(house, (-355, -1, -178), (36, 168, -114), "house"))
+    objs.append(Obj(house, (-355, -1, -178), (36, 168, -108), "house"))
 
     # the clock tower: three balconies, each flying its owner's banner, and the clock under a slate spire
     def tower(p):
@@ -283,15 +346,16 @@ def build(glitch=True):
             return d, GHOST
         objs.append(Obj(rain, (-362, 14, -92), (364, 206, 12), "rain"))
 
-    sky = gradient_sky(W, H, "#05060E", "#1A1A2E", glow=(560, 40, 120, "#2A2E4A"))
-    moon(sky, 590, 34, 9, hex_lit="#D8DCEC", hex_dark="#9AA0B8", halo="#3A4060")
+    sky = _sky(glitch)
     lights = [Light((380, 260, 200), "#9AAAE0", 1.1, 1000)]
     for hb, _ in BALCONIES:
         lights.append(Light((TOWER_X, hb + 9, FRONT + 10), "#F8B860", 0.35, 30, shadow=False))
+    for lx, ly in ((-234, 28), (-127, 32), (-93, 32)):          # the door lanterns
+        lights.append(Light((lx, ly, -150 + 46), "#F8B060", 0.55, 48, shadow=False))
     if not glitch:
         lights += [Light((-160, 70, -100), "#FFC870", 0.7, 160, shadow=False)]
     else:
         lights += [Light((272, 30, -60), "#8AB0FF", 0.6, 70, shadow=False)]
     return dict(world=World(objs), materials=mats, width=W, height=H, centre=CENTRE,
-                lights=lights, key=0.6, ambient=0.2, top=240.0, ss=2, steps=180, sky=sky,
-                bloom=[(WINDOW, "#FFC861", 8, 0.45), (CANDLE, "#F8B860", 6, 0.5), (GHOST, "#A8C8FF", 8, 0.55)])
+                lights=lights, key=0.7, ambient=0.2, top=240.0, ss=2, steps=180, sky=sky, post=_mist,
+                bloom=[(WINDOW, "#FFC861", 9, 0.5), (CANDLE, "#F8B860", 8, 0.6), (GHOST, "#A8C8FF", 8, 0.55)])

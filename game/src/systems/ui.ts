@@ -3,6 +3,7 @@
 import Phaser from "phaser";
 import { W } from "../consts";
 import { sfx } from "../audio";
+import { canListen, listen } from "./voice";
 
 const FONT = '"Pixelify Sans", monospace';
 
@@ -107,7 +108,30 @@ export function askBox(scene: Phaser.Scene, chips: string[], placeholder: string
     done.textContent = "Done";
     done.style.cssText = `font:inherit;padding:4px 12px;border:2px solid #0E1938;background:#0E1938;color:#F2E9CF;border-radius:6px;cursor:pointer;`;
     done.onclick = () => finish(null);
-    form.append(input, send, done);
+    const mic = document.createElement("button");
+    mic.type = "button";
+    mic.textContent = "🎙 Hold";
+    mic.setAttribute("aria-label", "Hold to ask out loud");
+    mic.style.cssText = `font:inherit;padding:4px 10px;border:2px solid #0E1938;background:#F2E9CF;color:#0E1938;border-radius:6px;cursor:pointer;touch-action:none;`;
+    let stop: (() => void) | null = null;
+    const down = (e: Event) => {
+      e.preventDefault();
+      if (stop) return;
+      mic.style.background = "#F07AAE";
+      stop = listen((text) => { input.value = text; });
+    };
+    const up = () => {
+      if (!stop) return;
+      stop();
+      stop = null;
+      mic.style.background = "#F2E9CF";
+      // the last words arrive just after release; give them a moment, then ask
+      setTimeout(() => { const v = input.value.trim(); if (v) finish(v); }, 450);
+    };
+    mic.addEventListener("pointerdown", down);
+    mic.addEventListener("pointerup", up);
+    mic.addEventListener("pointerleave", up);
+    form.append(input, ...(canListen() ? [mic] : []), send, done);
     form.onsubmit = (e) => { e.preventDefault(); const v = input.value.trim(); if (v) finish(v); };
     wrap.append(row, form);
     ["pointerdown", "keydown", "keyup"].forEach((ev) => wrap.addEventListener(ev, (e) => e.stopPropagation()));

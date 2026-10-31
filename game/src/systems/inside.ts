@@ -170,14 +170,16 @@ export function installInside(game: Phaser.Game) {
     const key = JSON.stringify([tab, data, note, tests, obsKey()]);
     if (!force && key === last) return;
     last = key;
-    const scroll = el.querySelector(".body")?.scrollTop ?? 0;
+    const old = el.querySelector(".body");
+    const scroll = old?.scrollTop ?? 0;
+    const atEnd = !old || old.scrollHeight - old.clientHeight - scroll < 40;   // follow new events only if the reader was at the bottom
     el.innerHTML = `
       <header><div class="eyebrow">Inside the case · spoilers</div><h2>${esc(data?.title ?? "Smudge")}</h2></header>
       <nav role="tablist">${TABS.map((t) => `<button type="button" role="tab" aria-selected="${t === tab}" data-tab="${t}">${t}</button>`).join("")}
         <button type="button" id="inside-close" style="margin-left:auto">Close ✕</button></nav>
       <div class="body">${tab === "Live" ? liveView() : data ? views[tab](data) : `<div class="card">${esc(note || "Loading...")}</div>`}</div>`;
     const body = el.querySelector(".body");
-    if (body && !force) body.scrollTop = scroll;
+    if (body && !force) body.scrollTop = tab === "Live" && atEnd ? body.scrollHeight : scroll;
     el.querySelectorAll<HTMLButtonElement>("[data-tab]").forEach((b) => (b.onclick = () => { tab = b.dataset.tab as Tab; render(); }));
     (el.querySelector("#inside-close") as HTMLButtonElement).onclick = close;
     el.querySelectorAll<HTMLButtonElement>("[data-ev]").forEach((b) => (b.onclick = () => {

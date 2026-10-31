@@ -216,6 +216,7 @@ export class LabFall extends Phaser.Scene {
     for (const b of order) {
       let guess = 0;
       if (b === bs[bs.length - 1]) guess = await this.predict(b);
+      this.dlg.hide();                                  // Footnote's box would sit over the stopwatch and eat the click
       await this.pickBalcony([b.id]);
       const t = await this.launch([{ vx: 0, h: b.h }], true, watch);
       this.label(PX, 88 + row++ * 12, `${b.name.padEnd(12)} ${b.h.toFixed(1).padStart(4)} m   ${t.toFixed(1)} s`, 9);
@@ -258,8 +259,8 @@ export class LabFall extends Phaser.Scene {
     const t = await this.launch([{ vx: 0.5, h: b.h }, { vx: 3, h: b.h, tint: 0xff7a6a }], false);
     const same = this.label(PX + 70, 100, "SAME TIME", 20, "#FAC775").setFontFamily(DISPLAY).setOrigin(0.5);
     this.tweens.add({ targets: same, scale: { from: 0.3, to: 1 }, duration: 300, ease: "Back.easeOut" });
-    const pushed = 3 * t;
-    this.label(PX, 124, `slip lands ${(0.5 * t).toFixed(1)} m out\npush lands ${pushed.toFixed(1)} m out`, 9);
+    const pushed = 3 * Math.sqrt((2 * b.h) / 9.8);   // exact fall time, not frame-timed t
+    this.label(PX, 124, `slip lands ${(0.5 * Math.sqrt((2 * b.h) / 9.8)).toFixed(1)} m out\npush lands ${pushed.toFixed(1)} m out`, 9);
     if (Math.abs(pushed - out) < 0.4) void this.dlg.say({ who: "foot", expr: "worried", text: "*The push lands on the outline." });
     await this.next();
     this.dlg.hide();

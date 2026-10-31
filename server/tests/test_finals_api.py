@@ -42,7 +42,7 @@ def test_stress_moves_through_ask_press_and_present():
     client.post("/api/press", json={"case_id": cid, "statement_id": "ohmar-1"})
     client.post("/api/present", json={"case_id": cid, "statement_id": "ohmar-0", "evidence": "resistor:ohmar"})
     s = client.get(f"/api/case/{cid}/trace").json()["stress"]
-    assert s["ohmar"] == {"level": 7, "band": "RATTLED"}       # +1 accuse, +1 press, +2 +3 hit
+    assert s["ohmar"] == {"level": 8, "band": "CORNERED"}      # +2 accuse, +1 press, +2 +3 hit
     assert s["volta"]["level"] == 0
 
 

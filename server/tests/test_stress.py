@@ -6,8 +6,8 @@ from stress import Stress, band_of
 SIDS = ["volta", "ohmar", "glim"]
 
 
-@pytest.mark.parametrize("level,band", [(0, "CALM"), (2, "CALM"), (3, "GUARDED"), (4, "GUARDED"), (5, "RATTLED"),
-                                         (7, "RATTLED"), (8, "CORNERED"), (9, "CORNERED")])
+@pytest.mark.parametrize("level,band", [(0, "CALM"), (1, "CALM"), (2, "GUARDED"), (3, "GUARDED"), (4, "RATTLED"),
+                                         (6, "RATTLED"), (7, "CORNERED"), (9, "CORNERED")])
 def test_bands(level, band):
     assert band_of(level) == band
 
@@ -15,7 +15,14 @@ def test_bands(level, band):
 def test_accusing_question_raises_only_the_one_asked():
     s = Stress(SIDS)
     s.asked("ohmar", "Admit it, you're lying!")
-    assert s.level == {"volta": 0, "ohmar": 1, "glim": 0}
+    assert s.level == {"volta": 0, "ohmar": 2, "glim": 0}
+
+
+@pytest.mark.parametrize("q", ["Just admit you pushed him.", "You killed him!", "Are you the thief?", "It was you."])
+def test_the_stage_accusations_leave_calm(q):
+    s = Stress(SIDS)
+    s.asked("glim", q)
+    assert s.band("glim") == "GUARDED"
 
 
 def test_a_plain_question_changes_nothing_for_the_one_asked():

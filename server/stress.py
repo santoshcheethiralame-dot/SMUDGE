@@ -2,8 +2,11 @@
 shapes tone and can never be a tell. The PLAN step reads the band; facts never depend on it."""
 import re
 
-ACCUSE = re.compile(r"\b(lie|lied|lying|liar|confess|admit|guilty|you did|it was you)\b", re.I)
-BANDS = ((2, "CALM"), (4, "GUARDED"), (7, "RATTLED"), (9, "CORNERED"))
+# a question that accuses whoever it is put to; the same words rattle any suspect, guilty or not
+ACCUSE = re.compile(r"\b(lie|lied|lying|liar|confess|admit|guilty|you did|did it|it was you|pushed|killed|murder\w*|"
+                    r"thief|stole|culprit|your fault)\b", re.I)
+# one straight accusation is enough to leave CALM; three, or a broken lie, corners anyone
+BANDS = ((1, "CALM"), (3, "GUARDED"), (6, "RATTLED"), (9, "CORNERED"))
 
 
 def band_of(level: int) -> str:
@@ -25,7 +28,7 @@ class Stress:
     def asked(self, sid, question: str):
         self._quiet_others(sid)
         if ACCUSE.search(question):
-            self._add(sid, 1)
+            self._add(sid, 2)
 
     def pressed(self, sid):
         self._quiet_others(sid)

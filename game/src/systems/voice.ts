@@ -27,6 +27,7 @@ async function sarvam(blob: Blob): Promise<string | null> {
 export function listen(onText: (text: string, final: boolean) => void, onError?: (why: string) => void): () => Promise<void> {
   hush();                                    // talking over a suspect cuts them off
   let local = "";
+  let stopped = false;                       // after release, the browser's late results must not overwrite what is sent
   let rec: any = null;
   if (Rec) {
     rec = new Rec();
@@ -34,6 +35,11 @@ export function listen(onText: (text: string, final: boolean) => void, onError?:
     rec.interimResults = true;
     rec.continuous = true;
     rec.onresult = (e: any) => {
+      if (stopped) {                         // a final result can land after release: keep it as the fallback, never show it
+        let t = ""; for (let n = 0; n < e.results.length; n++) t += e.results[n][0].transcript;
+        local = t.trim();
+        return;
+      }
       let text = "", final = false;
       for (let n = 0; n < e.results.length; n++) {
         text += e.results[n][0].transcript;
@@ -65,12 +71,14 @@ export function listen(onText: (text: string, final: boolean) => void, onError?:
 
   return async () => {
     live = false;
+    stopped = true;
     try { rec?.stop(); } catch { /* already stopped */ }
     try { if (recorder && recorder.state !== "inactive") recorder.stop(); } catch { /* already stopped */ }
     const blob = await Promise.race([clip, new Promise<null>((r) => setTimeout(() => r(null), 1500))]);
     const text = blob ? await sarvam(blob) : null;
-    if (text) onText(text, true);
-    else if (Rec) await new Promise((r) => setTimeout(r, 600));   // the browser's last words arrive just after release
+    if (Rec && !text) await new Promise((r) => setTimeout(r, 600));   // the browser's last words arrive just after release
+    console.debug(`[mic] browser: "${local}" | sarvam: ${text === null ? "none" : `"${text}"`} | sent: "${text ?? local}"`);
+    onText(text ?? local, true);                                      // one final text, and it is the one that is sent
   };
 }
 

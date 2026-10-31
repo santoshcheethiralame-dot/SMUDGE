@@ -93,6 +93,7 @@ class SuspectAgent:
         self.last_rule: str | None = None
         self.trace = trace or Trace()
         self.stress = stress
+        self.think: bool | None = None     # None follows SMUDGE_THINK; the Author's gate sets False
 
     def system(self):
         facts, secret = self.kit.knowledge(self.case, self.sid)
@@ -164,10 +165,11 @@ class SuspectAgent:
             self._emit("reply", "ok", question=q, text=text, filler=True)
             return {"answer": text, "source": "bark"}
         plan = None
-        if thinking():
+        think = thinking() if self.think is None else self.think
+        if think:
             plan = self._plan(q, patience)
         raw, meta = self._draft(q, plan, patience)
-        if raw is not None and thinking():
+        if raw is not None and think:
             if plan and plan["risk"] == "low":
                 self._emit("critique", "skip", why="low risk")
             else:
@@ -255,12 +257,14 @@ class Detective:
 
     # seconds to keep waiting for a strong model to accuse; the gate raises it to ride out the daily token cap
     patience = 120
+    think: bool | None = None      # passed to every suspect it questions
 
     def solve(self, case: Case, with_lab: bool):
         kit = kits.get(case.kit)
         notes = []
         for sid, s in kit.suspects.items():
             agent = SuspectAgent(case, sid)
+            agent.think = self.think
             for q in kit.detective_questions:
                 notes.append(f"{s['name']} ({sid}), asked '{q}': {agent.ask(q, patience=90)['answer']}")
             notes += [f"{s['name']} testimony: {x['text']}" for x in case.statements[sid]]

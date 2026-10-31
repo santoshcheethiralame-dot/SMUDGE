@@ -9,6 +9,7 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from pydantic import BaseModel
 
 import agents
+import author
 import kits
 import llm
 import stt
@@ -66,6 +67,31 @@ class Present(BaseModel):
 @app.get("/api/health")
 def health():
     return {"providers": llm.available(), "stats": llm.STATS, "cases": len(CASES), "kits": list(kits.REGISTRY)}
+
+
+class Author(BaseModel):
+    prompt: str
+
+
+@app.post("/api/author")
+def author_start(req: Author):
+    """A teacher's line in, a job id out; the agents write and gate the case in the background."""
+    if not req.prompt.strip():
+        raise HTTPException(400, "empty prompt")
+    return {"job": author.start(req.prompt).id}
+
+
+@app.get("/api/author/{jid}")
+def author_job(jid: str, since: int = 0):
+    if jid not in author.JOBS:
+        raise HTTPException(404, "unknown job")
+    return author.JOBS[jid].view(since)
+
+
+@app.get("/api/kits/generated")
+def generated():
+    """Every authored case's spec, for the game to build its CaseDef on the borrowed art."""
+    return [k.spec for k in kits.REGISTRY.values() if isinstance(k, author.GenericKit)]
 
 
 @app.post("/api/case/new")

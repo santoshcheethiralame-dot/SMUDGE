@@ -2,8 +2,8 @@
 The event shape is a contract with the game (docs/superpowers/specs/2026-10-30-finals-design.md §3.1)."""
 import time
 
-KINDS = {"suspect", "coach", "detective", "router", "redteam"}
-STEPS = {"plan", "draft", "critique", "redraft", "firewall", "reply", "hint", "route", "accuse"}
+KINDS = {"suspect", "coach", "detective", "router", "redteam", "author"}
+STEPS = {"plan", "draft", "critique", "redraft", "firewall", "reply", "hint", "route", "accuse", "design", "solve", "cast", "gate"}
 VERDICTS = {"ok", "leak", "block", "skip", "pass", "fallback"}
 PRIMARY = "groq"        # a step served by anything else (and not from the cache) also gets a router event
 

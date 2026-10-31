@@ -36,6 +36,8 @@ const CASE: CaseDef = {
   arrive: [
     { who: "foot", expr: "worried", text: "Hollowmere Manor. Midnight." },
     { who: "smudge", expr: "thinking", text: "They say the Tower Ghost took him." },
+    { who: "smudge", expr: "determined", text: "So it's the ghost. Case closed!" },
+    { who: "foot", expr: "neutral", text: "Check it. A hunch isn't evidence." },
   ],
   inspect: [{ who: "foot", expr: "neutral", text: "Three balconies. Three heights." }],
   toLab: { who: "smudge", expr: "determined", text: "The gramophone heard everything." },

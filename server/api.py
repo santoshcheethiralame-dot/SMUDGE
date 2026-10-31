@@ -91,7 +91,8 @@ def author_job(jid: str, since: int = 0):
 @app.get("/api/kits/generated")
 def generated():
     """Every authored case's spec, for the game to build its CaseDef on the borrowed art."""
-    return [k.spec for k in kits.REGISTRY.values() if isinstance(k, author.GenericKit)]
+    return [{**k.spec, "cast": {sid: {"name": s["name"], "role": s["role"]} for sid, s in k.suspects.items()}}
+            for k in kits.REGISTRY.values() if isinstance(k, author.GenericKit)]
 
 
 @app.post("/api/case/new")

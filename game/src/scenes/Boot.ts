@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { FONT, DISPLAY, W, H } from "../consts";
 import { CASES } from "../cases";
+import { loadGenerated } from "../cases/generated";
 
 const FOOT_ANIMS = ["foot_idle", "foot_talk", "foot_pop", "foot_worried", "foot_spin"];
 const FOOT_META: Record<string, { frames: number; fps: number; loop: boolean }> = {
@@ -71,6 +72,7 @@ export class Boot extends Phaser.Scene {
     } catch { /* fonts are a nicety; fall back silently */ }
     // ?case=<kit> drops straight into a district; ?scene=<Scene> into any scene
     const q = new URLSearchParams(location.search);
+    await loadGenerated();          // cases the Author agents wrote, on the art of the case each one borrows
     const kit = q.get("case");
     if (kit && CASES[kit]) this.scene.start("District", { kit, from: "hq" });
     else this.scene.start(q.get("scene") || "Title", { kit: kit ?? undefined });

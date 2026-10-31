@@ -8,6 +8,7 @@ import { buttonFeel } from "../systems/juice";
 import { api } from "../api";
 import { progress } from "../state";
 import { CASES, CASE_ORDER } from "../cases";
+import { openAuthor } from "../systems/author";
 
 /** The planned slate, by case number. A case folder with the same num replaces its entry. */
 const SLATE: { num: number; title: string; place: string; chapter: string }[] = [
@@ -103,8 +104,24 @@ export class CaseMap extends Phaser.Scene {
         }
       }
     });
+    // the Author agents: one line in, a new case on a built district out
+    const pen = this.add.text(W - 14, H - 10, "✎ Author a case", { fontFamily: FONT, fontSize: "10px", color: "#FFFFFF", backgroundColor: "#C9302A" })
+      .setPadding(6, 3, 6, 3).setOrigin(1, 1).setDepth(50).setInteractive({ useHandCursor: true });
+    buttonFeel(this, pen, "select");
+    pen.on("pointerup", () => this.author());
+    if (new URLSearchParams(location.search).has("author")) this.time.delayedCall(300, () => this.author());
     if (data?.from === "hq") await pageReveal(this);
     else this.cameras.main.fadeIn(400, 5, 6, 15);
+  }
+
+  private async author() {
+    this.input.enabled = false;
+    const kit = await openAuthor();
+    this.input.enabled = true;
+    if (!kit) return;
+    progress.reset(kit);
+    api.current = null;
+    pageTurn(this, () => { this.scene.start("District", { kit, from: "hq" }); });
   }
 
   private open(kit: string) {

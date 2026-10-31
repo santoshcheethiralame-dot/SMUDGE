@@ -51,6 +51,7 @@ Rules:
 - deed: second person, what the culprit secretly did. confession: first person, the culprit owning up.
 - borrow: the district whose cast fits the story best, one of:
 {casts}
+- Write a NEW story, place and objects for this law; never reuse the example's story.
 - id: "gen_" plus the law in lowercase letters, title: "The ..." (2-4 words), chapter: "Chapter N: Law"."""
 
 CRITIC = """You review a physics mystery written for 14-16-year-old students. Check:
@@ -91,7 +92,9 @@ def golden_for(prompt: str) -> dict:
 
 # --- the Designer ---------------------------------------------------------------
 def design(job: Job, feedback: list[str], last: dict | None, rnd: int, chat=llm.chat_json):
-    example = (GOLDEN / "pressure.json").read_text(encoding="utf8")
+    # the example is a golden spec for a different law, so the Designer can't hand the example back
+    ex = golden_for(job.prompt)
+    example = next(p for p in sorted(GOLDEN.glob("*.json")) if json.loads(p.read_text(encoding="utf8"))["id"] != ex["id"]).read_text(encoding="utf8")
     roster = "\n".join(f"  {k.id}: {k.place} - " + ", ".join(f"{s['name']} the {s['role']}" for s in k.suspects.values())
                        for k in casts().values())
     user = f"The teacher asked for: {job.prompt}"

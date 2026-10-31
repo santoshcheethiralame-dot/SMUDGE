@@ -1,0 +1,55 @@
+{
+ "id": "gen_pressure",
+ "title": "The Squashed Sketch",
+ "chapter": "Chapter 9: Pressure",
+ "law": "Pressure",
+ "formula": "P = F / A",
+ "out": {
+  "sym": "P",
+  "name": "pressure",
+  "unit": "Pa"
+ },
+ "ins": [
+  {
+   "sym": "F",
+   "name": "force",
+   "unit": "N",
+   "values": [
+    200,
+    300,
+    500,
+    800
+   ]
+  },
+  {
+   "sym": "A",
+   "name": "area",
+   "unit": "m^2",
+   "values": [
+    0.5,
+    0.8,
+    1.0,
+    2.0
+   ]
+  }
+ ],
+ "thing": "art studio",
+ "item": "canvas",
+ "crime": "During the school art fair a canvas was smashed by a falling weight. Each student claimed the pressure their weight exerted on the floor, and one of them lied.",
+ "deed": "you let a heavy crate fall onto the canvas, crushing it, then claimed a false pressure value.",
+ "oath": "My pressure was {value} {unit}. Check the board.",
+ "measure": "The lab reads each student's force and contact area from the incident log.",
+ "hint": "*Pressure is force divided by area. Which number goes on the bottom?",
+ "arrive": [
+  "Art Alley, and the canvas on the easel is torn to ribbons. The Baron erased the law of pressure.",
+  "Three students. Each one told the teacher their pressure reading.",
+  "Question them, then check the incident log."
+ ],
+ "inspect": [
+  "Crushed canvas fibers lie under a dented crate. Someone dropped it.",
+  "The incident log lists every student's force and contact area. Pressure reveals the liar."
+ ],
+ "confession": "Okay, I dropped the crate on the canvas. The Baron said pressure couldn't be checked any more.",
+ "borrow": "density",
+ "num": 50
+}

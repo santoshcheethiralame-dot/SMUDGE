@@ -38,6 +38,9 @@ Kushal, small fixes in your scenes, in order:
 3. **CrossExam:** the "Lady Varnish" and "Pendle" tabs touch; add a gap.
 4. Optional: the docked Observatory doesn't scroll to new events (fine on the stage path, Varnish is first).
 
+Mounika, next: [break the suspects and bug bash](docs/playtest/bug_bash.md). Try to get the suspects to give
+the case away, then play the case three different ways and open a GitHub issue for every bug.
+
 ## Latest (Oct 31, late)
 
 Each plan has a "Do next" or "Review and next steps" section at the top: read that first.

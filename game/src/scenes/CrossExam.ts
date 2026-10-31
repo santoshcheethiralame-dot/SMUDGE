@@ -50,10 +50,24 @@ export class CrossExam extends Phaser.Scene {
 
     // the Hall of Records: dark stage, three spotlights, ruled lines for floorboards
     this.add.rectangle(0, 0, W, H, 0x070a17).setOrigin(0);
-    const fl = this.add.graphics();
-    fl.fillStyle(0x0e1430, 1).fillRect(0, 150, W, 120);
-    fl.lineStyle(1, 0x22305c, 1);
-    for (let y = 154; y < 200; y += 6) fl.lineBetween(0, y + 0.5, W, y + 0.5);
+    const stage = this.content.stage;
+    if (stage) {
+      // the case's own district, held in shadow, rain falling through the spotlights
+      this.add.image(stage.x, stage.y, this.content.bg.glitch).setOrigin(0);
+      this.add.rectangle(0, 0, W, H, 0x070a17, 0.6).setOrigin(0);
+      const fl = this.add.graphics();
+      for (let i = 0; i < 6; i++) fl.fillStyle(0x070a17, 0.12 * (i + 1)).fillRect(0, 168 + i * 8, W, 8);
+      fl.fillStyle(0x070a17, 0.8).fillRect(0, 216, W, H - 216);
+      this.add.particles(0, 0, "px", {
+        x: { min: 0, max: W + 40 }, y: -10, speedY: { min: 300, max: 380 }, speedX: -40, lifespan: 900, frequency: 20, quantity: 2,
+        alpha: { start: 0.35, end: 0.05 }, tint: 0x8fa4cc, scaleY: 4, advance: 1000,
+      });
+    } else {
+      const fl = this.add.graphics();
+      fl.fillStyle(0x0e1430, 1).fillRect(0, 150, W, 120);
+      fl.lineStyle(1, 0x22305c, 1);
+      for (let y = 154; y < 200; y += 6) fl.lineBetween(0, y + 0.5, W, y + 0.5);
+    }
     this.add.particles(0, 0, "px", {
       x: { min: 120, max: 380 }, y: { min: 20, max: 170 }, speedY: { min: -3, max: 3 }, speedX: { min: -2, max: 2 }, lifespan: 5000,
       alpha: { values: [0, 0.5, 0] }, tint: 0xfff1c8, frequency: 160, blendMode: Phaser.BlendModes.ADD, advance: 3000,
@@ -112,6 +126,7 @@ export class CrossExam extends Phaser.Scene {
 
     // testimony panel, waiting below the screen
     const panel = this.add.container(0, 90);
+    const tails: Phaser.GameObjects.Graphics[] = [];
     const pg = this.add.graphics();
     pg.fillStyle(0xf2e9cf, 1).fillRect(8, 196, W - 16, 68);
     pg.lineStyle(2, 0x0e1938, 1).strokeRect(8, 196, W - 16, 68);
@@ -120,11 +135,21 @@ export class CrossExam extends Phaser.Scene {
       // no panel: a plaque under each spotlight, the oath over each head, and the suspect itself is the target
       pg.clear();
       this.order.forEach((who, i) => {
-        this.add.text(SPOT_X[i], 186, point.plaque(who), { fontFamily: FONT, fontSize: "9px", color: "#0E1938", backgroundColor: "#FAC775", align: "center" })
-          .setPadding(4, 1, 4, 1).setOrigin(0.5, 0);
-        this.bubbles[who] = this.add.text(SPOT_X[i], 128, api.current!.statements[who][0].text, {
+        // a brass plaque in an ink frame with a bevel, and the oath in a speech bubble with a tail
+        const pl = this.add.text(SPOT_X[i], 186, point.plaque(who), { fontFamily: FONT, fontSize: "9px", color: "#0E1938", backgroundColor: "#FAC775", align: "center" })
+          .setPadding(4, 1, 4, 1).setOrigin(0.5, 0).setDepth(2);
+        const pb = pl.getBounds();
+        this.add.graphics().setDepth(1).fillStyle(0x0e1938).fillRect(pb.x - 2, pb.y - 2, pb.width + 4, pb.height + 4)
+          .fillStyle(0x8a5a14).fillRect(pb.x - 1, pb.y - 1, pb.width + 2, pb.height + 2)
+          .fillStyle(0xfff0b0).fillRect(pb.x - 1, pb.y - 1, pb.width + 1, 1);
+        const b = this.bubbles[who] = this.add.text(SPOT_X[i], 128, api.current!.statements[who][0].text, {
           fontFamily: FONT, fontSize: "8px", color: "#0E1938", backgroundColor: "#F2E9CF", align: "center", wordWrap: { width: 70 },
         }).setPadding(3, 2, 3, 2).setOrigin(0.5, 1).setAlpha(0).setDepth(5);
+        const bb = b.getBounds(), cx = SPOT_X[i];
+        tails.push(this.add.graphics().setDepth(4).setAlpha(0)
+          .fillStyle(0x0e1938).fillRect(bb.x - 1, bb.y - 1, bb.width + 2, bb.height + 2)
+          .fillTriangle(cx - 5, bb.bottom, cx + 5, bb.bottom, cx, bb.bottom + 7)
+          .fillStyle(0xf2e9cf).fillTriangle(cx - 4, bb.bottom - 1, cx + 4, bb.bottom - 1, cx, bb.bottom + 5));
         this.sprites[who].setInteractive({ useHandCursor: true }).on("pointerdown", () => {
           if (this.busy) return;
           this.pick(who, 0, true);
@@ -181,7 +206,7 @@ export class CrossExam extends Phaser.Scene {
     await this.banner("CROSS-EXAMINATION");
     this.tweens.add({ targets: panel, y: 0, duration: 320, ease: "Back.easeOut" });
     this.tweens.add({ targets: this.badge, alpha: 1, duration: 300 });
-    if (point) this.tweens.add({ targets: Object.values(this.bubbles), alpha: 1, duration: 300 });
+    if (point) this.tweens.add({ targets: [...Object.values(this.bubbles), ...tails], alpha: 1, duration: 300 });
     sfx("open");
     this.pick(this.sel.who, this.sel.idx, true);
     await wait(this, 320);

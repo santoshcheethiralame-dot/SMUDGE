@@ -62,6 +62,7 @@ const CASE: CaseDef = {
     varnish: [{ expr: "shocked", text: "...Eleven metres. Oh, darling. You measured." }],
     pendle: [{ expr: "shocked", text: "...Nineteen metres. I... confess." }],
   },
+  stage: { x: -60, y: 22 },
   // every suspect swears the same oath, so the cross-exam is one move: whose balcony matches the fall?
   point: {
     plaque: (who) => `${ROOM[who]}\n${metres(who)} m`,

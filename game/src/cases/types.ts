@@ -48,6 +48,8 @@ export interface CaseDef {
   confess: Record<string, { expr: string; text: string }[]>;
   /** cross-examine as "point out the liar": one statement each, present by dropping the card on a suspect */
   point?: { plaque(who: string): string; intro: string; miss(who: string): string };
+  /** cross-exam set: the district backdrop (bg.glitch) at this offset, dimmed and in the rain, instead of the bare stage */
+  stage?: { x: number; y: number };
   restore: {
     glyphs: string[]; sub: string; card: string; cardSub: string;
     /** optional: plays over the restored district, before the formula card */

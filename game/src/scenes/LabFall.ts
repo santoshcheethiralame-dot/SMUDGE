@@ -143,7 +143,7 @@ export class LabFall extends Phaser.Scene {
     });
     const show = () => readout.setText(`Δt = ${Math.abs(marks[1].t - marks[0].t).toFixed(2)} s`);
     show();
-    void this.dlg.say({ who: "foot", expr: "neutral", text: "*The cry, then the thud. Time between them?" });
+    void this.dlg.say({ who: "foot", expr: "neutral", text: "*Find the cry and the thud." });
     return new Promise((resolve) => {
       this.button(W / 2, 252, "Lock in Δt", () => {
         const [a, b] = [Math.min(marks[0].t, marks[1].t), Math.max(marks[0].t, marks[1].t)];
@@ -256,6 +256,7 @@ export class LabFall extends Phaser.Scene {
     this.keep(this.add.ellipse(ox, GROUND + 4, 18, 6).setStrokeStyle(1, 0xf2e9cf));
     this.label(ox, GROUND + 10, `outline ${out} m`, 7, "#F2E9CF").setOrigin(0.5, 0);
     this.label(16, 108, "pale: slips off, 0.5 m/s\nred: pushed, 3 m/s", 9);
+    void this.dlg.say({ who: "smudge", expr: "determined", text: "Pushed or dropped, they land together." });
     const b = await this.pickBalcony([]);
     const t = await this.launch([{ vx: 0.5, h: b.h, color: 0xe8d8b0 }, { vx: 3, h: b.h, color: 0xc9302a }], false);
     const same = this.label(W / 2 - 40, 150, "SAME TIME", 20, "#FAC775").setFontFamily(DISPLAY).setOrigin(0.5);

@@ -166,15 +166,16 @@ function playClip(a: HTMLAudioElement, fallback: () => Promise<void>): Promise<v
   });
 }
 
-/** Pitch follows the speaker's blip voice, deep voices also slow down. */
+/** Pitch leans the way the speaker's blip voice does, deep voices a touch slower. Only a lean: past about ±15%
+ *  a voice stops sounding like a person (Footnote's 840 Hz blips used to max the pitch out). */
 function browserSpeak(who: string, text: string): Promise<void> {
   if (!("speechSynthesis" in window)) return Promise.resolve();
   hush();
   const v = voiceOf(who);
-  const mid = (v.lo + v.hi) / 2;
+  const lean = Math.max(-1, Math.min(1, Math.log2((v.lo + v.hi) / 2 / 300)));
   const u = new SpeechSynthesisUtterance(text);
-  u.pitch = Math.min(2, Math.max(0.1, mid / 220));
-  u.rate = Math.min(1.3, Math.max(0.75, 0.8 + mid / 1500));
+  u.pitch = 1 + 0.15 * lean;
+  u.rate = 1 + 0.06 * lean;
   const pick = pickVoice(who);
   if (pick) { u.voice = pick; u.lang = pick.lang; } else u.lang = "en-IN";
   talking = true;

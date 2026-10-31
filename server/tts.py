@@ -1,9 +1,15 @@
 """Spoken replies through Sarvam text-to-speech, called from the server so the key never reaches the browser.
-Any failure raises TtsError; the browser then speaks the line with its own voice instead."""
+With no Sarvam key, free Microsoft neural voices (edge-tts) speak instead, one cast voice per character, cached
+on disk so a rehearsed line plays at once. Any failure raises TtsError; the browser then uses its own voice."""
+import asyncio
 import base64
+import hashlib
 import os
 import re
+import shutil
+import subprocess
 from collections import OrderedDict
+from pathlib import Path
 
 import httpx
 
@@ -16,6 +22,39 @@ FIXED = {"smudge": "aditya", "foot": "priya", "narrator": "rahul", "baron": "rah
 POOL = ["shubh", "ritu", "neha", "aditya", "priya", "rahul"]
 _cache: "OrderedDict[tuple[str, str], bytes]" = OrderedDict()
 CACHE_MAX = 200
+
+
+# edge-tts casting: (voice, rate, pitch). Guides and the Midnight Fall cast are chosen by ear; everyone else gets a
+# stable voice from the pool. Small rate/pitch nudges only: big ones make a neural voice sound synthetic.
+CAST = {
+    "smudge": ("en-US-BrianNeural", "+0%", "+0Hz"),
+    "foot": ("en-US-AnaNeural", "+4%", "+0Hz"),
+    "narrator": ("en-US-ChristopherNeural", "-6%", "-2Hz"),
+    "baron": ("en-GB-RyanNeural", "-8%", "-8Hz"),
+    "varnish": ("en-GB-SoniaNeural", "-4%", "+0Hz"),
+    "rivet": ("en-IE-ConnorNeural", "-8%", "-6Hz"),
+    "pendle": ("en-GB-ThomasNeural", "-10%", "-2Hz"),
+}
+NEURAL_POOL = ["en-US-EmmaNeural", "en-US-GuyNeural", "en-GB-LibbyNeural", "en-US-EricNeural", "en-AU-NatashaNeural",
+               "en-US-RogerNeural", "en-IE-EmilyNeural", "en-US-SteffanNeural", "en-IN-NeerjaExpressiveNeural",
+               "en-IN-PrabhatNeural", "en-US-MichelleNeural", "en-AU-WilliamMultilingualNeural"]
+DISK = Path(__file__).resolve().parent / ".cache" / "tts"
+# neural voices hold 0.5-0.9 s at every full stop, which sounds like dead air in a game; cap each pause near 0.16 s
+# and speak 6% faster. ffmpeg missing or failing just leaves the clip as it came.
+TIGHTEN = ("silenceremove=start_periods=1:start_threshold=-50dB:stop_periods=-1:stop_duration=0.16:"
+           "stop_threshold=-45dB:stop_silence=0.16,atempo=1.06")
+
+
+def tighten(audio: bytes) -> bytes:
+    if not shutil.which("ffmpeg"):
+        return audio
+    try:
+        r = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-i", "pipe:0", "-af", TIGHTEN,
+                            "-c:a", "libmp3lame", "-b:a", "64k", "-f", "mp3", "pipe:1"],
+                           input=audio, capture_output=True, timeout=10)
+    except (OSError, subprocess.TimeoutExpired):
+        return audio
+    return r.stdout if r.returncode == 0 and r.stdout else audio
 
 
 class TtsError(Exception):
@@ -51,13 +90,56 @@ def speaker_for(who: str) -> str:
     return POOL[h % len(POOL)]
 
 
+def cast_for(who: str) -> tuple[str, str, str]:
+    if who in CAST:
+        return CAST[who]
+    h = 7
+    for ch in who:
+        h = (h * 31 + ord(ch)) & 0xFFFFFFFF
+    return NEURAL_POOL[h % len(NEURAL_POOL)], "+0%", "+0Hz"
+
+
+def _edge(text: str, voice: str, rate: str, pitch: str) -> bytes:
+    import edge_tts
+
+    async def run():
+        out = b""
+        async for chunk in edge_tts.Communicate(text, voice, rate=rate, pitch=pitch).stream():
+            if chunk["type"] == "audio":
+                out += chunk["data"]
+        return out
+    return asyncio.run(asyncio.wait_for(run(), TIMEOUT))
+
+
+def neural(who: str, text: str) -> bytes:
+    """Free neural voices for when there is no Sarvam key. SMUDGE_NEURAL_TTS=0 turns them off."""
+    if os.environ.get("SMUDGE_NEURAL_TTS", "1") == "0":
+        raise TtsError(503, "no SARVAM_API_KEY and neural voices are off")
+    voice, rate, pitch = cast_for(who)
+    path = DISK / (hashlib.sha256(f"{voice}|{rate}|{pitch}|{text}|tight1".encode()).hexdigest()[:24] + ".mp3")
+    if path.exists():
+        return path.read_bytes()
+    try:
+        audio = _edge(pronounce(text), voice, rate, pitch)
+    except ImportError:
+        raise TtsError(503, "no SARVAM_API_KEY and edge-tts is not installed")
+    except Exception as e:
+        raise TtsError(502, f"neural voice failed: {type(e).__name__}")
+    if not audio:
+        raise TtsError(502, "neural voice sent no audio")
+    audio = tighten(audio)
+    DISK.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(audio)
+    return audio
+
+
 def synthesize(who: str, text: str, client: httpx.Client | None = None) -> bytes:
-    key = os.environ.get("SARVAM_API_KEY")
-    if not key:
-        raise TtsError(503, "no SARVAM_API_KEY")
     text = text.strip()
     if not text:
         raise TtsError(400, "empty text")
+    key = os.environ.get("SARVAM_API_KEY")
+    if not key:
+        return neural(who, text[:MAX_CHARS])
     text = text[:MAX_CHARS]
     ck = (speaker_for(who), text)
     if ck in _cache:

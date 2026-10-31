@@ -112,6 +112,8 @@ export class Dialogue {
   }
 
   async play(lines: Line[]) {
+    // every line's audio starts loading now, so the next line's voice is ready when its text is: no gap between lines
+    for (const l of lines) if (l.voice !== false) for (const text of paginate(l.text)) prefetch(l.who, text);
     for (const l of lines) await this.say(l);
     this.hide();
   }

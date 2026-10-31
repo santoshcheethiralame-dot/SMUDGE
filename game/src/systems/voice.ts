@@ -89,15 +89,71 @@ function pickVoice(who: string): SpeechSynthesisVoice | null {
 }
 if ("speechSynthesis" in window) speechSynthesis.getVoices();   // voices load lazily in Chrome; warm the list
 
+// Spoken lines come from Sarvam (through the server) when it answers, and from the browser's own voice when it doesn't.
+const clips = new Map<string, Promise<HTMLAudioElement | null>>();
+const clipsReady = new Map<string, HTMLAudioElement>();
+let ttsDownUntil = 0;                        // after a failure, skip Sarvam for a while so a dead service never delays a line
+let clip: HTMLAudioElement | null = null;    // the line playing right now, if it is a Sarvam clip
+const spoken = (text: string) => text.replace(/^\*+\s*/, "");
+const clipKey = (who: string, text: string) => `${who}\u0001${text}`;
+
+/** Start fetching a line's audio now, so it is ready by the time the line is shown. Safe to call twice. */
+export function prefetch(who: string, text: string) {
+  text = spoken(text);
+  const k = clipKey(who, text);
+  if (!text.trim() || isMuted() || Date.now() < ttsDownUntil || clips.has(k)) return;
+  if (clips.size > 80) { const old = clips.keys().next().value!; clips.delete(old); clipsReady.delete(old); }
+  clips.set(k, fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ who, text }) })
+    .then(async (r) => {
+      if (!r.ok) { ttsDownUntil = Date.now() + (r.status === 503 ? 600_000 : 15_000); clips.delete(k); return null; }
+      const a = new Audio(URL.createObjectURL(await r.blob()));
+      a.preload = "auto";
+      clipsReady.set(k, a);
+      return a;
+    })
+    .catch(() => { ttsDownUntil = Date.now() + 15_000; clips.delete(k); return null; }));
+}
+
+/** Resolves when the line's audio is ready, or after `ms`, whichever comes first, so text and voice can start together
+ *  without a slow or dead Sarvam ever holding the text back. */
+export async function ready(who: string, text: string, ms = 1500): Promise<void> {
+  prefetch(who, text);
+  const p = clips.get(clipKey(who, spoken(text)));
+  if (p) await Promise.race([p, new Promise((r) => setTimeout(r, ms))]);
+}
+
 let talking = false;
 let finish: (() => void) | null = null;       // ends the line being spoken, so nothing waits on a speech that never ends
 export const speaking = () => talking;
 
-/** Speak a reply in this speaker's voice: pitch follows their blip voice, deep voices also slow down. */
+/** Speak a reply in this speaker's voice: the Sarvam clip if it is ready, else the browser's voice. */
 export function speak(who: string, text: string): Promise<void> {
   // everyone is voiced; the speaker button / M key (the game's mute) silences speech too
-  text = text.replace(/^\*+\s*/, "");
-  if (!("speechSynthesis" in window) || isMuted() || !text.trim()) return Promise.resolve();
+  text = spoken(text);
+  if (isMuted() || !text.trim()) return Promise.resolve();
+  const a = clipsReady.get(clipKey(who, text));
+  if (a) return playClip(a, () => browserSpeak(who, text));
+  prefetch(who, text);            // not ready yet: the browser voice covers this line, and the clip is cached for a repeat
+  return browserSpeak(who, text);
+}
+
+function playClip(a: HTMLAudioElement, fallback: () => Promise<void>): Promise<void> {
+  hush();
+  talking = true;
+  return new Promise((resolve) => {
+    const done = () => { a.onended = a.onerror = null; if (finish === done) { finish = null; talking = false; clip = null; } resolve(); };
+    finish = done;
+    clip = a;
+    a.onended = done;
+    a.onerror = () => { done(); void fallback(); };
+    a.currentTime = 0;
+    a.play().catch(() => { done(); void fallback(); });
+  });
+}
+
+/** Pitch follows the speaker's blip voice, deep voices also slow down. */
+function browserSpeak(who: string, text: string): Promise<void> {
+  if (!("speechSynthesis" in window)) return Promise.resolve();
   hush();
   const v = voiceOf(who);
   const mid = (v.lo + v.hi) / 2;
@@ -130,6 +186,7 @@ export function speak(who: string, text: string): Promise<void> {
 }
 
 export function hush() {
+  if (clip) { try { clip.pause(); } catch { /* already stopped */ } clip = null; }
   if ("speechSynthesis" in window) { try { speechSynthesis.cancel(); } catch { /* nothing to cancel */ } }
   const f = finish;
   finish = null;

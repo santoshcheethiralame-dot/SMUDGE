@@ -3,7 +3,7 @@
 //  2. the drop test: drop a sack from each balcony, with a stopwatch and a strobe trail; predict the top drop first.
 //  3. slip or push: two sacks leave the same balcony at once, one slipping, one pushed. Same landing time.
 //  4. the notebook: h = ½ × g × t², checked by the server.
-// Drawn with shapes over the lab backdrops, so it works with the placeholder art. Registered by cases/fall/index.ts.
+// Drawn over lab_tower / lab_gramophone at full opacity; every coordinate comes from fall_layout.json. Registered by cases/fall/index.ts.
 import Phaser from "phaser";
 import { W, H, Z, FONT, DISPLAY } from "../consts";
 import { Dialogue } from "../systems/dialogue";
@@ -14,13 +14,17 @@ import { inkIn, inkOut } from "../systems/transition";
 import { api, LabResult } from "../api";
 import { progress } from "../state";
 import { calc } from "../systems/lab/calc";
+import { FALL } from "../cases/fall/layout";
 
 interface Recording { length: number; cry_at: number; thud_at: number; thunder_at: number[] }
 interface Balcony { id: string; name: string; h: number }
-interface Sack { obj: Phaser.GameObjects.Arc; x0: number; vx: number; h: number; landed: boolean }
+interface Sack { obj: Phaser.GameObjects.Image; x0: number; vx: number; h: number; landed: boolean }
 
-// the drop-test tower: metres to pixels, the same scale both ways so the paths are true to life
-const GROUND = 240, PXM = 8, WALL = 360, SNAP = 0.1;
+// The art's own geometry (assets/case10/fall_layout.json): lab_tower is drawn for these numbers, so the sacks fall true to it.
+const T = FALL.tower, STRIP = FALL.gramophone.strip;
+const GROUND = T.ground_y, PXM = T.px_per_m, WALL = T.wall_x, DROP_X = T.drop_from_x, SNAP = 0.1;
+// the right-hand panel (the sky beside the tower) holds the titles, stopwatch and results
+const PX = 330;
 const NAMES: Record<string, string> = { rivet: "Armoury", varnish: "Gallery", pendle: "Clock room" };
 
 export class LabFall extends Phaser.Scene {
@@ -63,15 +67,17 @@ export class LabFall extends Phaser.Scene {
       if (s.landed) continue;
       const fallen = Math.min(s.h, 0.5 * this.g * run.t * run.t);
       const t = Math.sqrt((2 * fallen) / this.g);
-      s.obj.setPosition(s.x0 - s.vx * t * PXM, GROUND - (s.h - fallen) * PXM - 3);
+      // sideways travel is measured from the wall, the sack is drawn at the balcony rail (DROP_X), so ease the 18 px back
+      // in as it falls: a push of 3 m/s for 1.5 s then lands exactly on the chalk outline, 4.5 m from the wall
+      s.obj.setPosition(s.x0 + s.vx * t * PXM - (s.vx > 0 ? (DROP_X - WALL) * (fallen / s.h) : 0), GROUND - (s.h - fallen) * PXM - 8);
       if (fallen >= s.h) s.landed = true;
     }
     if (run.strobe) {
       while (run.lastDot + 0.1 <= run.t && !run.sacks[0].landed) {
         run.lastDot += 0.1;
         const s = run.sacks[0];
-        const y = GROUND - (s.h - 0.5 * this.g * run.lastDot ** 2) * PXM - 3;
-        this.keep(this.add.circle(s.x0, y, 1.5, 0xfac775));
+        const y = GROUND - (s.h - 0.5 * this.g * run.lastDot ** 2) * PXM - 8;
+        this.keep(this.add.circle(s.x0, y + 5, 1.5, 0xfac775));
       }
     }
     const tLand = Math.sqrt((2 * run.sacks[0].h) / this.g);
@@ -101,38 +107,36 @@ export class LabFall extends Phaser.Scene {
     const b = (api.current?.balconies ?? { rivet: 4.9, varnish: 11.0, pendle: 19.6 }) as Record<string, number>;
     return Object.entries(b).map(([id, h]) => ({ id, name: NAMES[id] ?? id, h })).sort((a, z) => a.h - z.h);
   }
-  private balconyY(h: number) { return GROUND - h * PXM; }
+  private balconyY(h: number) { return GROUND - h * PXM; }          // = tower.balconies[id].y in fall_layout.json
 
   // ---- 1. the recording ----------------------------------------------------
   private recording(): Promise<void> {
     const rec = api.current!.recording as Recording;
-    const X0 = 24, XW = 432, PXS = XW / rec.length, Y0 = 150;
-    this.keep(this.add.image(0, 0, "lab_gramophone").setOrigin(0).setAlpha(0.35));
-    this.keep(this.add.rectangle(16, 92, 448, 120, 0x070a17, 0.9).setOrigin(0).setStrokeStyle(1, 0x3d4c85));
-    this.label(24, 96, "THE GRAMOPHONE · drag a marker onto the cry, one onto the thud", 8, "#FAC775");
+    const X0 = STRIP.x0, XW = STRIP.x1 - STRIP.x0, PXS = STRIP.px_per_s, Y0 = STRIP.mid;
+    this.keep(this.add.image(0, 0, "lab_gramophone").setOrigin(0));
+    this.label(X0, 97, "THE GRAMOPHONE · drag a marker onto the cry, one onto the thud", 8, "#FAC775");
     // the waveform: low noise, wide thunder, a thin cry, a sharp thud
     const bump = (t: number, c: number, s: number) => Math.exp(-((t - c) ** 2) / (2 * s * s));
     const noise = (i: number) => Math.abs((Math.sin(i * 12.9898) * 43758.5453) % 1);
     const wave = this.keep(this.add.graphics());
     wave.lineStyle(1, 0x8fe0c0, 0.9);
-    for (let x = 0; x < XW; x++) {
+    for (let x = 0; x <= XW; x++) {
       const t = x / PXS;
       let a = 2 + noise(x) * 4;
-      for (const th of rec.thunder_at) a += 46 * bump(t, th, 0.18) * (0.55 + 0.45 * noise(x + 99));
-      a += 50 * bump(t, rec.cry_at, 0.02) + 34 * bump(t, rec.thud_at, 0.01);
-      wave.lineBetween(X0 + x, Y0 - Math.min(a, 52), X0 + x, Y0 + Math.min(a, 52));
+      for (const th of rec.thunder_at) a += 33 * bump(t, th, 0.18) * (0.55 + 0.45 * noise(x + 99));
+      a += 36 * bump(t, rec.cry_at, 0.02) + 24 * bump(t, rec.thud_at, 0.01);
+      wave.lineBetween(X0 + x, Y0 - Math.min(a, 36), X0 + x, Y0 + Math.min(a, 36));
     }
-    for (let s = 0; s <= rec.length; s++) this.label(X0 + s * PXS - 3, 200, `${s}s`, 7, "#9AA6C8");
-    const readout = this.label(456, 96, "", 10, "#FFFFFF").setOrigin(1, 0);
+    const readout = this.label(STRIP.x1, 96, "", 10, "#FFFFFF").setOrigin(1, 0);
 
     const spikes = [rec.cry_at, rec.thud_at];
     const marks = [1.0, 4.0].map((t0, i) => {
-      const line = this.keep(this.add.rectangle(0, Y0, 1, 108, i ? 0x7ab4ff : 0xf07aae));
-      const handle = this.keep(this.add.rectangle(0, 212, 12, 10, i ? 0x7ab4ff : 0xf07aae).setInteractive({ useHandCursor: true, draggable: true }));
+      const line = this.keep(this.add.rectangle(0, Y0, 1, STRIP.y1 - STRIP.y0, i ? 0x7ab4ff : 0xf07aae));
+      const handle = this.keep(this.add.rectangle(0, STRIP.y1 + 22, 12, 10, i ? 0x7ab4ff : 0xf07aae).setInteractive({ useHandCursor: true, draggable: true }));
       const m = { t: t0, line, handle };
       const place = () => { const x = X0 + m.t * PXS; line.setX(x); handle.setX(x); };
       handle.on("drag", (_p: Phaser.Input.Pointer, dragX: number) => {
-        let t = Phaser.Math.Clamp((dragX - X0) / PXS, 0, rec.length);
+        let t = Phaser.Math.Clamp((dragX - X0) / PXS, 0, STRIP.seconds);
         for (const s of spikes) if (Math.abs(t - s) <= SNAP) t = s;     // a marker clicks onto a spike nearby
         m.t = t;
         place();
@@ -163,20 +167,10 @@ export class LabFall extends Phaser.Scene {
 
   // ---- 2. the drop test ----------------------------------------------------
   private drawTower(title: string) {
-    this.keep(this.add.image(0, 0, "lab_tower").setOrigin(0).setAlpha(0.4));
-    this.keep(this.add.rectangle(0, GROUND, W, H - GROUND, 0x2a2838).setOrigin(0));
-    this.keep(this.add.rectangle(WALL, 60, 80, GROUND - 60, 0x3c3858).setOrigin(0));
-    // the metre strip up the wall
-    const strip = this.keep(this.add.graphics());
-    strip.lineStyle(1, 0xf2e9cf, 0.7);
-    for (let m = 0; m <= 21; m++) strip.lineBetween(WALL + 2, GROUND - m * PXM, WALL + (m % 5 ? 6 : 12), GROUND - m * PXM);
-    for (let m = 5; m <= 20; m += 5) this.label(WALL + 14, GROUND - m * PXM - 5, `${m} m`, 7, "#F2E9CF");
-    for (const b of this.balconies()) {
-      const y = this.balconyY(b.h);
-      this.keep(this.add.rectangle(WALL - 22, y, 22, 3, 0xc8b88a).setOrigin(0, 0));
-      this.label(WALL - 26, y - 11, `${b.name} ${b.h} m`, 7, "#C8B88A").setOrigin(1, 0);
-    }
-    this.label(16, 90, title, 9, "#FAC775");
+    // the tower, the metre strip, the balcony rails and the chalk outline are all in the picture
+    this.keep(this.add.image(0, 0, "lab_tower").setOrigin(0));
+    for (const b of this.balconies()) this.label(WALL + 40, this.balconyY(b.h) - 5, `${b.name} ${b.h} m`, 7, "#F2E9CF");
+    this.label(PX, 6, title, 9, "#FAC775").setWordWrapWidth(140);
   }
 
   /** Resolves when the player clicks one of these balconies (any balcony when ids is empty). */
@@ -186,21 +180,27 @@ export class LabFall extends Phaser.Scene {
       for (const b of this.balconies()) {
         const ok = !ids.length || ids.includes(b.id);
         const y = this.balconyY(b.h);
-        const glow = ok ? this.keep(this.add.rectangle(WALL - 24, y - 3, 26, 9, 0xfac775, 0.5).setOrigin(0)) : null;
+        const glow = ok ? this.keep(this.add.rectangle(WALL + 2, y - 4, 34, 9, 0xfac775, 0.5).setOrigin(0)) : null;
         if (glow) this.tweens.add({ targets: glow, alpha: 0.1, duration: 500, yoyo: true, repeat: -1 });
         if (!ok) continue;
-        const z = this.keep(this.add.zone(WALL - 40, y - 12, 60, 22).setOrigin(0).setInteractive({ useHandCursor: true }));
+        const z = this.keep(this.add.zone(WALL, y - 12, 70, 24).setOrigin(0).setInteractive({ useHandCursor: true }));
         zones.push(z, ...(glow ? [glow] : []));
         z.on("pointerdown", () => { for (const o of zones) o.destroy(); resolve(b); });
       }
     });
   }
 
-  private launch(sacks: { vx: number; h: number; color: number }[], strobe: boolean, watch?: Phaser.GameObjects.Text): Promise<number> {
+  private sack(x: number, y: number, tint?: number) {
+    const o = this.add.image(x, y, "sack");
+    if (tint) o.setTint(tint);
+    return o;
+  }
+
+  private launch(sacks: { vx: number; h: number; tint?: number }[], strobe: boolean, watch?: Phaser.GameObjects.Text): Promise<number> {
     sfx("swish");
     return new Promise((done) => {
       const list = sacks.map((s) => ({
-        obj: this.keep(this.add.circle(WALL - 8, this.balconyY(s.h) - 3, 3, s.color)), x0: WALL - 8, vx: s.vx, h: s.h, landed: false,
+        obj: this.keep(this.sack(DROP_X, this.balconyY(s.h) - 8, s.tint)), x0: DROP_X, vx: s.vx, h: s.h, landed: false,
       }));
       this.run = { sacks: list, t: 0, strobe, lastDot: 0, watch, done };
     });
@@ -208,8 +208,8 @@ export class LabFall extends Phaser.Scene {
 
   private async dropTest() {
     this.drawTower("THE DROP TEST · click the glowing balcony to drop the sack");
-    const watch = this.label(220, 108, "0.00 s", 16, "#FFFFFF").setFontFamily(DISPLAY);
-    this.label(16, 108, "balcony      height     time", 8, "#9AA6C8");
+    const watch = this.label(PX, 44, "0.00 s", 16, "#FFFFFF").setFontFamily(DISPLAY);
+    this.label(PX, 76, "balcony       height   time", 8, "#9AA6C8");
     const bs = this.balconies();
     const order = [bs[0], bs[bs.length - 1], ...bs.slice(1, -1)];       // lowest, then the top, then the middle
     let row = 0;
@@ -217,10 +217,10 @@ export class LabFall extends Phaser.Scene {
       let guess = 0;
       if (b === bs[bs.length - 1]) guess = await this.predict(b);
       await this.pickBalcony([b.id]);
-      const t = await this.launch([{ vx: 0, h: b.h, color: 0xe8d8b0 }], true, watch);
-      this.label(16, 122 + row++ * 12, `${b.name.padEnd(12)} ${b.h.toFixed(1).padStart(4)} m   ${t.toFixed(1)} s`, 9);
+      const t = await this.launch([{ vx: 0, h: b.h }], true, watch);
+      this.label(PX, 88 + row++ * 12, `${b.name.padEnd(12)} ${b.h.toFixed(1).padStart(4)} m   ${t.toFixed(1)} s`, 9);
       if (guess) {
-        const v = this.label(220, 132, `You said ${guess} s. It took ${t.toFixed(1)} s.`, 9, "#FAC775");
+        const v = this.label(PX, 130, `You said ${guess} s. It took ${t.toFixed(1)} s.`, 9, "#FAC775");
         this.tweens.add({ targets: v, scale: { from: 1.3, to: 1 }, duration: 300, ease: "Back.easeOut" });
         void this.dlg.say({ who: "foot", expr: "surprised", text: "*Four times higher. Only twice as long!" });
       }
@@ -233,9 +233,9 @@ export class LabFall extends Phaser.Scene {
 
   /** The prediction dial before the top drop. Stored for the playtest numbers. */
   private predict(b: Balcony): Promise<number> {
-    const head = this.label(220, 150, `Predict: from ${b.name}, how long?`, 9, "#FFFFFF");
+    const head = this.label(PX, 100, `Predict: from ${b.name}, how long?`, 9, "#FFFFFF").setWordWrapWidth(140);
     return new Promise((resolve) => {
-      const btns = [1, 2, 3, 4].map((n, i) => this.button(240 + i * 34, 172, `${n} s`, () => {
+      const btns = [1, 2, 3, 4].map((n, i) => this.button(PX + 16 + i * 36, 136, `${n} s`, () => {
         try { localStorage.setItem("smudge.predict", String(n)); } catch { /* private window */ }
         for (const x of btns) x.destroy();
         head.destroy();
@@ -251,18 +251,14 @@ export class LabFall extends Phaser.Scene {
   // ---- 3. slip or push? ----------------------------------------------------
   private async slipOrPush() {
     this.drawTower("SLIP OR PUSH? · pick any balcony");
-    const out = Number((api.current?.landing as { from_wall?: number } | undefined)?.from_wall) || 4.5;
-    const ox = WALL - 8 - out * PXM;
-    this.keep(this.add.ellipse(ox, GROUND + 4, 18, 6).setStrokeStyle(1, 0xf2e9cf));
-    this.label(ox, GROUND + 10, `outline ${out} m`, 7, "#F2E9CF").setOrigin(0.5, 0);
-    this.label(16, 108, "pale: slips off, 0.5 m/s\nred: pushed, 3 m/s", 9);
-    void this.dlg.say({ who: "smudge", expr: "determined", text: "Pushed or dropped, they land together." });
+    const out = Number((api.current?.landing as { from_wall?: number } | undefined)?.from_wall) || T.outline.metres;
+    this.label(PX, 40, "pale: slips off, 0.5 m/s\nred: pushed, 3 m/s", 9);
     const b = await this.pickBalcony([]);
-    const t = await this.launch([{ vx: 0.5, h: b.h, color: 0xe8d8b0 }, { vx: 3, h: b.h, color: 0xc9302a }], false);
-    const same = this.label(W / 2 - 40, 150, "SAME TIME", 20, "#FAC775").setFontFamily(DISPLAY).setOrigin(0.5);
+    const t = await this.launch([{ vx: 0.5, h: b.h }, { vx: 3, h: b.h, tint: 0xff7a6a }], false);
+    const same = this.label(PX + 70, 100, "SAME TIME", 20, "#FAC775").setFontFamily(DISPLAY).setOrigin(0.5);
     this.tweens.add({ targets: same, scale: { from: 0.3, to: 1 }, duration: 300, ease: "Back.easeOut" });
     const pushed = 3 * t;
-    this.label(16, 140, `slip lands ${(0.5 * t).toFixed(1)} m out\npush lands ${pushed.toFixed(1)} m out`, 9);
+    this.label(PX, 124, `slip lands ${(0.5 * t).toFixed(1)} m out\npush lands ${pushed.toFixed(1)} m out`, 9);
     if (Math.abs(pushed - out) < 0.4) void this.dlg.say({ who: "foot", expr: "worried", text: "*The push lands on the outline." });
     await this.next();
     this.dlg.hide();

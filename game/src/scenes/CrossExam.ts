@@ -400,7 +400,7 @@ export class CrossExam extends Phaser.Scene {
     progress.culprit = who;
     for (const l of this.content.confess[who]) await this.dlg.say({ who: who as Who, expr: l.expr, text: l.text });
     await this.dlg.play([
-      { who: "foot", expr: "happy", text: "The Baron again! But the truth is proven, and when the truth is proven..." },
+      { who: "foot", expr: "happy", text: this.content.caught ?? "The Baron again! But the truth is proven, and when the truth is proven..." },
       { who: "smudge", expr: "determined", text: "...the law writes itself back." },
     ]);
     progress.solve(progress.kit);

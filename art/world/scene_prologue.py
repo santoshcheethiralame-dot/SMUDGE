@@ -2,8 +2,8 @@
 floor; the next page curls up behind like a wall. Printed text is a texture
 in page space, pre-stretched so it reads upright through the 20 deg camera.
 
-build(erased=True) renders the same page after the Rubber Baron has rubbed
-the density formula out.
+build(erased=True) renders the same page after the Tower Ghost has wiped
+the law of falling off it.
 """
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -67,7 +67,7 @@ def _texture(erased):
 
     if not erased:
         # the law itself, printed on the floor at Smudge's feet
-        x, s, w, h = _stamp(tex, "\u03c1 = m / V", _font("georgiai.ttf", 34), -70, 108, FLOOR_STRETCH, PRINT)
+        x, s, w, h = _stamp(tex, "h = \u00bdgt\u00b2", _font("georgiai.ttf", 34), -70, 108, FLOOR_STRETCH, PRINT)
         ax, _, aw, ah = _stamp(tex, "*", _font("georgiab.ttf", 44), x + w + 6, 108 + 40, FLOOR_STRETCH, PRINT_RED)
         ASTERISK = (ax + aw / 2, FLOOR_FRONT - (108 + 40 + ah * 0.5))
     else:
@@ -80,22 +80,22 @@ def _texture(erased):
         tex[blob & noise & (tex == 0)] = SMEAR
         ASTERISK = (110.0, FLOOR_FRONT - 170.0)
 
-    # the curled page reads like a wall: chapter heading and a beaker diagram
-    _stamp(tex, "CHAPTER 9", _font("georgiab.ttf", 15), -60, S_FLAT + 128, 1.12, PRINT_RED)
-    _stamp(tex, "Density", _font("georgiab.ttf", 46), -78, S_FLAT + 64, 1.12, PRINT)
-    _stamp(tex, "Why do some things float?", _font("georgiai.ttf", 15), -78, S_FLAT + 40, 1.12, PRINT)
-    _stamp(tex, "density = mass ÷ volume", _font("georgia.ttf", 19), -78, S_FLAT + 12, 1.12, PRINT)
-    # beaker diagram (left of the heading)
+    # the curled page reads like a wall: chapter heading and a tower diagram
+    _stamp(tex, "CHAPTER 10", _font("georgiab.ttf", 15), -60, S_FLAT + 128, 1.12, PRINT_RED)
+    _stamp(tex, "Falling Bodies", _font("georgiab.ttf", 40), -78, S_FLAT + 64, 1.12, PRINT)
+    _stamp(tex, "Why do things fall faster and faster?", _font("georgiai.ttf", 15), -78, S_FLAT + 40, 1.12, PRINT)
+    _stamp(tex, "height = ½ × g × time²", _font("georgia.ttf", 19), -78, S_FLAT + 12, 1.12, PRINT)
+    # tower diagram (left of the heading): a tower, the ground, and a strobe of a falling ball spreading out
     img = Image.new("L", (110, 130), 0)
     d = ImageDraw.Draw(img)
-    d.line([(20, 10), (20, 118), (90, 118), (90, 10)], fill=255, width=4)
-    d.line([(14, 10), (26, 10)], fill=255, width=3)
-    d.line([(84, 10), (96, 10)], fill=255, width=3)
-    for yy in (40, 62, 84, 106):
-        d.line([(20, yy), (34, yy)], fill=255, width=2)
-    d.arc([(20, 52), (55, 66)], 180, 360, fill=255, width=3)
-    d.arc([(55, 52), (90, 66)], 0, 180, fill=255, width=3)
-    d.ellipse([(44, 80), (66, 102)], outline=255, width=3)
+    d.rectangle([(14, 14), (40, 118)], outline=255, width=3)
+    d.polygon([(10, 14), (44, 14), (27, 2)], outline=255)
+    d.line([(40, 30), (54, 30)], fill=255, width=3)
+    d.line([(4, 118), (106, 118)], fill=255, width=3)
+    for y in (30, 42, 60, 84, 108):                    # equal time steps, the gaps growing
+        d.ellipse([(58, y), (66, y + 8)], outline=255, width=2)
+    d.line([(84, 34), (84, 112)], fill=255, width=2)
+    d.polygon([(78, 104), (90, 104), (84, 114)], fill=255)
     a = np.array(img.resize((110, int(130 * 1.12)))) > 100
     top = srow(S_FLAT + 22 + a.shape[0])
     left = -250 - X0

@@ -63,6 +63,7 @@ const CASE: CaseDef = {
     pendle: [{ expr: "shocked", text: "...Nineteen metres. I... confess." }],
   },
   stage: { x: -60, y: 22 },
+  caught: "No ghost after all. The truth is proven, and when the truth is proven...",
   // every suspect swears the same oath, so the cross-exam is one move: whose balcony matches the fall?
   point: {
     plaque: (who) => `${ROOM[who]}\n${metres(who)} m`,

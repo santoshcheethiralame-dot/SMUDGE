@@ -3,12 +3,14 @@ import { W, FONT, FEET_ORIGIN, project } from "../consts";
 import { Dialogue } from "../systems/dialogue";
 import { makeGlow, makePixel, dust, wait, tween, playOnce, pageTurn } from "../systems/fx";
 import { sfx, music, ambience } from "../audio";
+import { api } from "../api";
+import { progress } from "../state";
 
 const C = { cu: 0, cv: 92 };
 const P = (x: number, y: number, z: number) => project(x, y, z, C.cu, C.cv);
 
 const SMUDGE_AT = P(-40, 0, 28);
-const ASTERISK = P(99.5, 0, -50.5);
+const ASTERISK = P(93.5, 0, -50.5);
 const FOOT_AT = P(60, 0, 8);
 // the nib image is 210x190 with its tip at (47, 177)
 const NIB_TIP = { x: 47 / 210, y: 177 / 190 };
@@ -43,7 +45,13 @@ export class Prologue extends Phaser.Scene {
     this.skipped = true;
     this.cameras.main.fadeOut(300, 5, 6, 15);
     await wait(this, 320);
-    this.scene.start("HQ");
+    this.toManor();
+  }
+
+  /** The prologue leads straight into the Midnight Fall, the case the ghost story sets up. */
+  private toManor() {
+    if (progress.kit !== "fall" || progress.solved) { progress.reset("fall"); api.current = null; }
+    this.scene.start("District", { kit: "fall", from: "hq" });
   }
 
   private async run(erased: Phaser.GameObjects.Image) {
@@ -93,38 +101,45 @@ export class Prologue extends Phaser.Scene {
 
     await this.dlg.play([
       { who: "foot", expr: "happy", text: "Psst! Over here! I'm Footnote. I live at the bottom of things." },
-      { who: "foot", expr: "neutral", text: "You dripped right onto Chapter 9. Density! Lovely chapter. It's the one that explains why boats float." },
+      { who: "foot", expr: "neutral", text: "You dripped right onto the chapter on falling. Gravity! It's the one that explains why things drop." },
       { who: "smudge", expr: "smug", text: "Riveting." },
     ]);
 
-    // the Rubber Baron's eraser scrubs the law off the page
+    // the Tower Ghost sweeps across the page, and the law fades out behind it
     music("tense");
     sfx("rumble");
     this.cameras.main.shake(1800, 0.006);
     await wait(this, 500);
     smudge.play("surprised_E");
     foot.play("foot_worried_S");
-    const eraser = this.add.image(W + 140, 226, "eraser").setOrigin(0.5, 0.92).setDepth(25);
+    // sheet_ghost.png is two 32 px frames; frame "0" is the ghost with its eyes
+    const tex = this.textures.get("sheet_ghost");
+    if (!tex.has("0")) { tex.add("0", 0, 0, 0, 32, 32); tex.add("1", 0, 32, 0, 32, 32); }
+    const ghost = this.add.image(W + 140, 226, "sheet_ghost", "0").setOrigin(0.5, 0.92).setScale(4).setDepth(25)
+      .setTint(0xc8dcff).setAlpha(0.9);
+    const halo = this.add.image(ghost.x, 180, "glow64").setScale(3.2).setBlendMode(Phaser.BlendModes.ADD).setTint(0x6a9aff).setAlpha(0.35).setDepth(24);
     const crumbs = this.add.particles(0, 0, "px", {
-      speedX: { min: -30, max: 30 }, speedY: { min: -40, max: -10 }, gravityY: 120,
-      lifespan: { min: 400, max: 900 }, tint: [0xd17594, 0x8f8268, 0x5c574d], quantity: 2, frequency: 40,
-      emitting: false,
+      speedX: { min: 10, max: 50 }, speedY: { min: -30, max: -5 },
+      lifespan: { min: 600, max: 1200 }, tint: [0xa8c8ff, 0x6a9aff, 0xe8f0ff], alpha: { start: 0.8, end: 0 },
+      blendMode: Phaser.BlendModes.ADD, quantity: 2, frequency: 30, emitting: false,
     }).setDepth(26);
     const mask = this.make.graphics({ x: 0, y: 0 }, false);
     erased.setVisible(true).setMask(mask.createGeometryMask());
-    sfx("rubStart");
+    sfx("whoosh");
     crumbs.start();
     await tween(this, {
-      targets: eraser, x: -150, duration: 3200, ease: "Sine.easeInOut",
+      targets: ghost, x: -150, duration: 3200, ease: "Sine.easeInOut",
       onUpdate: () => {
-        const ex = eraser.x - 80;
+        const ex = ghost.x;
         mask.clear().fillStyle(0xffffff).fillRect(Math.max(0, ex), 150, W, 120);
-        crumbs.setPosition(eraser.x - 96, 222);
-        eraser.y = 226 + Math.sin(eraser.x * 0.08) * 2;
+        crumbs.setPosition(ghost.x + 50, 200 + Math.random() * 40);
+        ghost.y = 216 + Math.sin(ghost.x * 0.04) * 8;
+        ghost.angle = Math.sin(ghost.x * 0.06) * 6;
+        halo.setPosition(ghost.x, ghost.y - 64);
       },
     });
-    sfx("rubStop");
     crumbs.stop();
+    halo.destroy();
     erased.clearMask(true);
     patch.setVisible(false);
     music("night");
@@ -132,11 +147,11 @@ export class Prologue extends Phaser.Scene {
     if (this.skipped) return;
 
     await this.dlg.play([
-      { who: "foot", expr: "worried", text: "No. No no no. That was the Rubber Baron! He just rubbed out the law of density!" },
-      { who: "smudge", expr: "surprised", text: "Can he DO that?" },
-      { who: "foot", expr: "worried", text: "Without it, nothing knows whether to float or sink. Buoyant Bay will be underwater by morning." },
-      { who: "smudge", expr: "determined", text: "Then somebody has to write it back." },
-      { who: "foot", expr: "happy", text: "Somebody in a detective hat, maybe? Come on. The old Detective Club HQ is just down the gutter." },
+      { who: "foot", expr: "worried", text: "No. No no no. The Tower Ghost! It just wiped the law of falling off the page!" },
+      { who: "smudge", expr: "thinking", text: "Ghosts aren't real." },
+      { who: "foot", expr: "worried", text: "Tell that to Hollowmere Manor. Someone fell from the clock tower tonight, and they all swear the ghost did it." },
+      { who: "smudge", expr: "determined", text: "Then somebody has to find out what really happened." },
+      { who: "foot", expr: "happy", text: "Somebody in a detective hat, maybe? Come on. The manor is just down the gutter." },
     ]);
     if (this.skipped) return;
 
@@ -146,12 +161,12 @@ export class Prologue extends Phaser.Scene {
     this.tweens.add({ targets: foot, x: W + 40, duration: 2200, ease: "Sine.easeIn", delay: 200 });
     this.tweens.add({ targets: shadow, x: W + 20, duration: 2600 });
     await tween(this, { targets: smudge, x: W + 20, duration: 2600 });
-    await pageTurn(this, () => { this.scene.start("HQ", { from: "prologue" }); });
+    await pageTurn(this, () => this.toManor());
   }
 
-  /** Cover the printed asterisk with the strip of page just to its left (ruled lines and all). */
+  /** Cover the printed asterisk with the strip of page just to its right (ruled lines and all). */
   private paperPatch(x: number, y: number) {
-    const w = 22, h = 18, shift = 24;
+    const w = 22, h = 18, shift = -26;                // blank page to the right (the left holds the formula)
     return this.add.image(shift, 0, "prologue").setOrigin(0, 0)
       .setCrop(Math.round(x - w / 2 - shift), Math.round(y - h + 2), w, h).setDepth(2).setVisible(false);
   }

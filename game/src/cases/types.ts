@@ -46,6 +46,8 @@ export interface CaseDef {
   miss(ev: Evidence): string;
   stuck(ev: Evidence): string;
   confess: Record<string, { expr: string; text: string }[]>;
+  /** Footnote's line after the confession; the default blames the Baron */
+  caught?: string;
   /** cross-examine as "point out the liar": one statement each, present by dropping the card on a suspect */
   point?: { plaque(who: string): string; intro: string; miss(who: string): string };
   /** cross-exam set: the district backdrop (bg.glitch) at this offset, dimmed and in the rain, instead of the bare stage */

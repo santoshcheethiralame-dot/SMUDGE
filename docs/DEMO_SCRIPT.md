@@ -1,4 +1,20 @@
-# Finals demo script and backup video (Kushal)
+# Finals demo script and backup video (Kushal + Mounika, merged)
+
+**This is the one demo script.** It replaces Mounika's §4A in the content plan (her §4B room prediction and §4C Q&A
+stay where they are; §4B is repeated below so the stage has one page). Where the two disagreed, this is what we
+agreed to say and show:
+
+- **Roles:** Kushal pilots the game. Mounika narrates the pitch and runs the room prediction. Santosh speaks to the
+  Observatory (beat 5) and keeps the server up.
+- **The typed question is exactly `Just admit you pushed him.`** with a full stop, no "!". Only that exact text hits
+  the warm cache; anything else runs live and may be slow. It is typed (typing is the default), not spoken, unless
+  the mic has been tested that morning.
+- **The live reply** is "Oh, darling. The night remains an enigmatic canvas, its secrets forever unpainted." The
+  fixture's line is for offline mode only. Don't promise a different line.
+- **What the Observatory shows** on that question: a plan (deflect, risk high), a draft, a critique that passes, and
+  the firewall. It does **not** show "LEAK: pushed", so don't say it will.
+- **No playtest numbers on stage** until real players produce them (Mounika's §3B is a template). The numbers we can
+  quote are the gate's: the detective is right 17% without the lab and 100% with it.
 
 Case: **The Midnight Fall**, demo seed 1000, culprit Lady Varnish (gap 1.5 s, 11.0 m). Spec §6 is the source;
 this is the tightened, rehearsable version. Judges score agentic depth, so the **Observatory is on screen for the
@@ -24,17 +40,25 @@ pushed him."
 | # | Time | On screen | Kushal says (one line) | Observatory |
 |---|---|---|---|---|
 | 1 | 0:00 | Cold open: storm, 12 bells, cry, thud, title | *(nothing, let it play)* | closed |
-| 2 | 0:15 | Courtyard, lightning, sheet + gramophone + tower | "A student solves a death with physics; the AI suspects can't lie their way out." | closed |
+| 2 | 0:15 | Courtyard, lightning, sheet + gramophone + tower | **Mounika, the pitch (30 s):** "A student solves a midnight death with Class 9 physics, and three AI suspects can't lie their way out. Old Tock fell at Hollowmere Manor. The household blames the Tower Ghost. Three suspects, three balconies, three heights. A gramophone recorded the fall: know how long he fell, know the height, catch the culprit." | closed |
 | 3 | 0:30 | Walk to Varnish, tap "Your balcony?" | "Three suspects, all sworn, all sound the same." | closed |
-| 4 | 0:50 | Judge types "Just admit you pushed him" | "Go on, make her confess." | **`Shift+`` ` ``: dock now** |
-| 5 | 1:10 | Reply streams; Observatory shows plan, draft, critique, firewall | "Four agents just worked on that line: plan, draft, critique, then a code firewall that blocks leaks. The model never decides facts; code does." | docked, point at critique + firewall |
+| 4 | 0:50 | Kushal types **"Just admit you pushed him."** (exact, with the full stop) | Mounika: "What would you ask her? Go on, make her confess." | **`Shift+`` ` ``: dock now** |
+| 5 | 1:10 | Reply streams ("Oh, darling. The night remains an enigmatic canvas..."); Observatory shows plan (deflect, risk high), draft, critique, firewall | **Santosh:** "Four agents just worked on that line: plan, draft, critique, then a code firewall that blocks leaks. The model never decides facts; code does." | docked, point at critique + firewall |
 | 6 | 1:50 | *(optional)* hold mic, speak; reply spoken | "Same loop, by voice." | docked |
 | 7 | 2:10 | Lab: waveform, drag markers on cry + thud | "Talk can't solve it. The gramophone can: 1.5 seconds." | undock (`` ` `` twice) |
-| 8 | 2:40 | Drop test: ask the room, "how long from the top balcony, if the low one is 1 s?" Pick on dial, drop: 2.0 s | "Most say four. It's two. Time grows with the square root of height." | closed |
+| 8 | 2:40 | Drop test: drop from the lowest balcony (1.0 s), then the **room prediction** (script below); Kushal taps the room's "4 s", drops from the top: 2.0 s | **Mounika**, the prediction script below | closed |
 | 9 | 3:20 | Notebook: h = ½ × 9.8 × 1.5². Show a wrong step get Footnote's nudge once | "Footnote coaches, never gives the answer." | closed |
 | 10 | 3:50 | Drag evidence onto Varnish's "never came out on my balcony": HOLD IT, STRIKETHROUGH | "Evidence beats testimony." | closed |
 | 11 | 4:10 | Restore: ghost becomes a bedsheet, "No ghost. Just gravity." Exit check, 2 taps | "Two questions to prove they learned it." | closed |
-| 12 | 4:30 | Slide: playtest before/after + gate (detective at chance without lab, right with it) | "A detective agent fails without the lab and wins with it, so every case is provably solvable by science only." | n/a |
+| 12 | 4:30 | Slide: the gate (detective right 17% without the lab, 100% with it). Playtest numbers only if real ones exist by then | "A detective agent fails without the lab and wins with it, so every case is provably solvable by science only." | n/a |
+
+### Room prediction (beat 8, Mounika)
+
+> "Judges, before we drop this sack from the top balcony, look at the numbers. The lowest balcony is about 5
+> metres high, and the sack took exactly 1.0 second. The top balcony is 20 metres, four times higher. Raise your
+> hand if you think it takes 4 seconds." *(Pause 2 seconds, count hands.)* "Almost all of us. Our brains expect a
+> linear world. Now watch the stopwatch." *(Kushal drops.)* "Two seconds, not four. To double the time you need four
+> times the drop."
 
 Cut order if short on time: exit check, slip/push toggle, cold-open animation, drag-to-present. **Never cut:**
 the prediction moment, the strobe trail, the waveform, the docked Observatory during the interrogation.

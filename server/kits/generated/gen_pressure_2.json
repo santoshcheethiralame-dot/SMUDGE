@@ -1,0 +1,53 @@
+{
+ "id": "gen_pressure_2",
+ "title": "The Crushed Tile",
+ "chapter": "Chapter 9: Pressure",
+ "law": "Pressure",
+ "formula": "P = F / A",
+ "out": {
+  "sym": "P",
+  "name": "pressure",
+  "unit": "Pa"
+ },
+ "ins": [
+  {
+   "sym": "F",
+   "name": "force",
+   "unit": "N",
+   "values": [
+    450,
+    600,
+    750
+   ]
+  },
+  {
+   "sym": "A",
+   "name": "area",
+   "unit": "m^2",
+   "values": [
+    1,
+    1.5,
+    2
+   ]
+  }
+ ],
+ "thing": "crate",
+ "item": "floor tile",
+ "crime": "During chemistry lab a heavy crate was dropped, cracking a floor tile. Each student claimed the pressure their crate exerted, and one lied.",
+ "deed": "you dropped your crate on the tile, cracked it, then reported a false pressure.",
+ "oath": "My crate presses on the floor at {value} Pa. Check the gauge.",
+ "measure": "The lab measures each crate's force and contact area with the sensor pad.",
+ "hint": "*Pressure is force divided by area. Which number goes on top?",
+ "arrive": [
+  "The lab floor is cracked; the pressure law is needed to catch the liar.",
+  "Three students each gave a pressure reading for their crate.",
+  "Question them, then compare to the sensor data."
+ ],
+ "inspect": [
+  "Crate footprints show a heavy impact point.",
+  "Sensor logs list force and area for each crate; pressure reveals the false claim."
+ ],
+ "confession": "Okay, I slammed my crate down, broke the tile, and gave a higher pressure than the data shows.",
+ "borrow": "density",
+ "num": 50
+}

@@ -510,5 +510,21 @@
   "no_lab": "ferris",
   "with_lab": "al",
   "passed": true
+ },
+ {
+  "kit": "gen_pressure_2",
+  "seed": 1000,
+  "culprit": "cyl",
+  "no_lab": "karat",
+  "with_lab": "cyl",
+  "passed": true
+ },
+ {
+  "kit": "gen_pressure_2",
+  "seed": 1001,
+  "culprit": "karat",
+  "no_lab": "karat",
+  "with_lab": "karat",
+  "passed": true
  }
 ]

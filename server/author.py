@@ -195,9 +195,10 @@ def critique(job: Job, spec: dict, rnd: int, chat=llm.chat_json) -> list[str]:
 def cast(job: Job, spec: dict) -> GenericKit:
     slug = re.sub(r"[^a-z0-9]+", "_", spec["id"].lower()).strip("_")
     spec["id"] = slug if slug.startswith("gen_") else f"gen_{slug}"
-    taken = set(kits.REGISTRY)          # never overwrite a built or earlier authored case
+    taken = set(kits.REGISTRY)          # never overwrite a built or earlier authored case: gen_x, gen_x_2, gen_x_3...
+    base, n = spec["id"], 2
     while spec["id"] in taken:
-        spec["id"] += "_2"
+        spec["id"], n = f"{base}_{n}", n + 1
     spec.setdefault("num", 50)
     kit = kits.add_generated(spec)
     job.emit("casting", "cast", "ok", borrow=spec["borrow"], place=kit.place, kit=kit.id,

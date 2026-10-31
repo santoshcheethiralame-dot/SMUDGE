@@ -2,6 +2,7 @@
 // Both are on-device or browser-provided and free. Typing always works; without recognition the mic hides.
 import { voiceOf } from "../audio/voices";
 import { isMuted } from "../audio";
+import { speakable } from "./speakable";
 
 const Rec: any = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
 const canRecord = () => Boolean(navigator.mediaDevices?.getUserMedia) && typeof MediaRecorder !== "undefined";
@@ -94,7 +95,7 @@ const clips = new Map<string, Promise<HTMLAudioElement | null>>();
 const clipsReady = new Map<string, HTMLAudioElement>();
 let ttsDownUntil = 0;                        // after a failure, skip Sarvam for a while so a dead service never delays a line
 let clip: HTMLAudioElement | null = null;    // the line playing right now, if it is a Sarvam clip
-const spoken = (text: string) => text.replace(/^\*+\s*/, "");
+const spoken = (text: string) => speakable(text.replace(/^\*+\s*/, ""));
 const clipKey = (who: string, text: string) => `${who}\u0001${text}`;
 
 /** Start fetching a line's audio now, so it is ready by the time the line is shown. Safe to call twice. */

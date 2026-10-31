@@ -1,0 +1,7 @@
+{"kit": "ohm", "seed": 1000, "culprit": "ohmar", "result": {"no_lab": "volta", "with_lab": "ohmar"},
+ "events": [
+  {"dt": 0, "i": 0, "t": 1730300000.0, "agent": "volta", "kind": "suspect", "step": "plan", "model": "openai/gpt-oss-20b", "provider": "groq", "ms": 130, "tokens": 400, "cached": false, "verdict": "ok", "data": {"intent": "answer", "risk": "low", "must_avoid": [], "strategy": "list the stock", "stress": 0}},
+  {"dt": 250, "i": 1, "t": 1730300000.4, "agent": "volta", "kind": "suspect", "step": "reply", "model": null, "provider": null, "ms": 0, "tokens": 0, "cached": false, "verdict": "ok", "data": {"question": "What resistors does your shop stock, and is any missing?", "text": "Batteries, sparky! I only keep 10 ohm resistors for my testers."}},
+  {"dt": 2600, "i": 2, "t": 1730300003.0, "agent": "detective", "kind": "detective", "step": "accuse", "model": "openai/gpt-oss-120b", "provider": "groq", "ms": 2100, "tokens": 1800, "cached": false, "verdict": "ok", "data": {"with_lab": false, "culprit": "volta", "reason": "Without measurements, every shop could have done it."}},
+  {"dt": 4900, "i": 3, "t": 1730300005.0, "agent": "detective", "kind": "detective", "step": "accuse", "model": "openai/gpt-oss-120b", "provider": "groq", "ms": 2200, "tokens": 1900, "cached": false, "verdict": "ok", "data": {"with_lab": true, "culprit": "ohmar", "reason": "5 V over 0.25 A is 20 ohm; only Ohmar stocks 20 ohm."}}
+ ]}

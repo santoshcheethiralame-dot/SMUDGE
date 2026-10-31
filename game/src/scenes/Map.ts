@@ -105,8 +105,8 @@ export class CaseMap extends Phaser.Scene {
       }
     });
     // the Author agents: one line in, a new case on a built district out
-    const pen = this.add.text(W - 14, H - 10, "✎ Author a case", { fontFamily: FONT, fontSize: "10px", color: "#FFFFFF", backgroundColor: "#C9302A" })
-      .setPadding(6, 3, 6, 3).setOrigin(1, 1).setDepth(50).setInteractive({ useHandCursor: true });
+    const pen = this.add.text(W - 14, H - 1, "✎ Author a case", { fontFamily: FONT, fontSize: "10px", color: "#FFFFFF", backgroundColor: "#C9302A" })
+      .setPadding(6, 2, 6, 1).setOrigin(1, 1).setDepth(50).setInteractive({ useHandCursor: true });
     buttonFeel(this, pen, "select");
     pen.on("pointerup", () => this.author());
     if (new URLSearchParams(location.search).has("author")) this.time.delayedCall(300, () => this.author());

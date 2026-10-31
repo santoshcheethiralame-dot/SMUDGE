@@ -35,7 +35,7 @@ export class Boot extends Phaser.Scene {
     for (const a of FOOT_ANIMS) this.load.spritesheet(a, `assets/footnote/${a}.png`, { frameWidth: 64, frameHeight: 64 });
     for (const bg of ["title", "prologue", "prologue_erased", "hq", "nib", "eraser"]) this.load.image(bg, `assets/bg/${bg}.png`);
     // the casebook and its pop-ups, rendered by art/world/build_casebook.py
-    for (const k of ["book", ...Array.from({ length: 9 }, (_, i) => `pop${i + 1}`)]) this.load.image(`map_${k}`, `assets/map/map_${k}.png`);
+    for (const k of ["book", ...Array.from({ length: 10 }, (_, i) => `pop${i + 1}`)]) this.load.image(`map_${k}`, `assets/map/map_${k}.png`);
     // shared lab props, rendered by art/world/build_instruments.py
     for (const k of ["phone", "dial", "hub", "knob", "thermo", "protractor46", "tube", "dropper", "cylinder",
       "balance", "crate", "tub", "ingot", "crown", "die1", "die2", "die3", "die4", "die5", "die6"]) this.load.image(`lab_${k}`, `assets/lab/lab_${k}.png`);

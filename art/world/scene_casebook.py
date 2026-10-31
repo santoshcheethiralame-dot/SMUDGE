@@ -192,11 +192,25 @@ def pop(num):
         teeth = np.maximum(g - 6.0 - 1.2 * (np.sin(np.arctan2(p[:, 1] - 6.0, p[:, 0] + 10.0) * 8) > 0), np.abs(p[:, 2] - 2.5) - 0.8)
         yield np.maximum(teeth, 2.0 - g), P_GREY
 
-    parts = {1: bay, 2: mesa, 3: valley, 4: heights, 5: prism, 6: ohm, 7: kelvin, 8: acid, 9: watt}[num]
+    def manor(p):
+        # Hollowmere's clock tower with its lit face and a balcony, and the Tower Ghost drifting beside it
+        yield sdf.box(p - [-5.0, 12.0, -2.0], (4.2, 12.0, 3.6), 0.4), P_GREY
+        yield np.maximum.reduce([np.abs(p[:, 2] + 2.0) - 4.0, np.abs(p[:, 0] + 5.0) * 1.5 + (p[:, 1] - 33.0), 24.0 - p[:, 1]]), P_NAVY
+        yield sdf.cylinder_y((p - [-5.0, 18.5, 1.7]) @ sdf.rot_x(np.pi / 2), 2.8, 0.35, 0.1), LAMP
+        yield sdf.capsule(p, (-5.0, 18.5, 2.3), (-5.0, 20.6, 2.3), 0.35), P_NAVY
+        yield sdf.capsule(p, (-5.0, 18.5, 2.3), (-3.6, 18.5, 2.3), 0.35), P_NAVY
+        yield sdf.box(p - [-5.0, 9.0, 2.4], (5.0, 0.5, 1.6), 0.2), P_WOOD
+        yield sdf.box(p - [-5.0, 3.0, 1.8], (1.6, 3.0, 0.3), 0.2), P_WOOD
+        hem = 10.5 + 0.9 * np.sin(p[:, 0] * 1.7)
+        yield np.maximum(sdf.ellipsoid(p, (10.0, 17.0, 1.0), (4.6, 7.0, 2.6)), hem - p[:, 1]), PAPER
+        for ex in (8.6, 11.4):
+            yield sdf.sphere(p, (ex, 18.8, 3.1), 0.8), P_NAVY
+
+    parts = {1: bay, 2: mesa, 3: valley, 4: heights, 5: prism, 6: ohm, 7: kelvin, 8: acid, 9: watt, 10: manor}[num]
     return _bench([Obj(_scene(parts), (-24, -1, -12), (24, 36, 12), f"pop{num}")], 48, 44, (0.0, 13.0))
 
 
-PROPS = {"book": book, **{f"pop{n}": (lambda n=n: pop(n)) for n in range(1, 10)}}
+PROPS = {"book": book, **{f"pop{n}": (lambda n=n: pop(n)) for n in range(1, 11)}}
 
 
 def build(which="book"):

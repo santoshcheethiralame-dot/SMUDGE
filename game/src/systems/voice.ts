@@ -36,6 +36,7 @@ export function listen(onText: (text: string, final: boolean) => void): () => vo
 }
 
 let talking = false;
+let finish: (() => void) | null = null;       // ends the line being spoken, so nothing waits on a speech that never ends
 export const speaking = () => talking;
 
 /** Speak a reply in this speaker's voice: pitch follows their blip voice, deep voices also slow down. */
@@ -53,14 +54,22 @@ export function speak(who: string, text: string): Promise<void> {
   u.lang = "en-IN";
   talking = true;
   return new Promise((resolve) => {
-    u.onend = u.onerror = () => { talking = false; resolve(); };
-    speechSynthesis.speak(u);
+    // Chrome sometimes never fires onend (no voices installed, a long line, a tab in the background), which would
+    // freeze the next question; so a timer ends the line too, a little after it should have finished.
+    const guard = setTimeout(() => done(), 1500 + text.split(/\s+/).length * 450);
+    const done = () => { clearTimeout(guard); if (finish === done) { finish = null; talking = false; } resolve(); };
+    finish = done;
+    u.onend = u.onerror = done;
+    try { speechSynthesis.speak(u); } catch { done(); }
   });
 }
 
 export function hush() {
-  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  if ("speechSynthesis" in window) { try { speechSynthesis.cancel(); } catch { /* nothing to cancel */ } }
+  const f = finish;
+  finish = null;
   talking = false;
+  f?.();
 }
 
 const LABEL: Record<Mode, string> = { on: "🗣 Voices: all", suspects: "🗣 Voices: suspects", off: "🗣 Voices: off" };

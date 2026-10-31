@@ -70,6 +70,25 @@ export class CrossExam extends Phaser.Scene {
     // evidence badge and Footnote's patience, as three ink stars
     this.badge = this.add.text(8, 92, this.content.badge(this.evidence()), { fontFamily: FONT, fontSize: "10px", color: "#0E1938", backgroundColor: "#FAC775", lineSpacing: 1 })
       .setPadding(4, 3, 4, 3).setAlpha(0);
+    // drag the evidence card onto a statement: the same as picking that statement and pressing Present
+    this.badge.setInteractive({ useHandCursor: true, draggable: true });
+    const home = { x: this.badge.x, y: this.badge.y };
+    const rowAt = (p: Phaser.Input.Pointer) =>
+      this.rows.findIndex((r) => r.text.trim() && Math.abs(p.worldY - r.getBounds().centerY) <= 6 && p.worldX > 8 && p.worldX < W - 8);
+    const tint = (over: number) => this.rows.forEach((r, k) => r.setColor(k === over ? "#2E5CAD" : k === this.sel.idx ? "#C9302A" : "#0E1938"));
+    this.badge.on("drag", (p: Phaser.Input.Pointer, x: number, y: number) => {
+      if (this.busy) return;
+      this.badge.setPosition(x, y).setDepth(950);
+      tint(rowAt(p));
+    });
+    this.badge.on("dragend", (p: Phaser.Input.Pointer) => {
+      const i = this.busy ? -1 : rowAt(p);
+      this.badge.setPosition(home.x, home.y).setDepth(0);
+      tint(-1);
+      if (i < 0) return;
+      this.pick(this.sel.who, i, true);
+      void this.present();
+    });
     this.add.text(W - 8, 92, "Footnote's patience", { fontFamily: FONT, fontSize: "9px", color: "#EB6A9E" }).setOrigin(1, 0);
     for (let i = 0; i < 3; i++) this.stars.push(this.star(W - 52 + i * 18, 114));
 
@@ -132,7 +151,7 @@ export class CrossExam extends Phaser.Scene {
     this.dlg = new Dialogue(this);
     await this.dlg.play([
       { who: "foot", expr: "neutral", text: "Cross-examination! Pick a suspect, pick a statement. PRESS it to dig deeper." },
-      { who: "foot", expr: "worried", text: "When a statement can't be true because of your evidence, PRESENT the evidence. But my patience has limits." },
+      { who: "foot", expr: "worried", text: "When a statement can't be true because of your evidence, PRESENT the evidence, or drag the card onto it. But my patience has limits." },
     ]);
     this.busy = false;
   }

@@ -44,7 +44,13 @@ export interface CaseDef {
   miss(ev: Evidence): string;
   stuck(ev: Evidence): string;
   confess: Record<string, { expr: string; text: string }[]>;
-  restore: { glyphs: string[]; sub: string; card: string; cardSub: string };
+  restore: {
+    glyphs: string[]; sub: string; card: string; cardSub: string;
+    /** optional: plays over the restored district, before the formula card */
+    reveal?: (scene: Phaser.Scene) => Promise<void>;
+    /** optional: plays after the formula card, before the case-solved screen (an exit check, say) */
+    after?: (scene: Phaser.Scene) => Promise<void>;
+  };
   solved(name: string): string;
   /** where it sits on the map: x, y on the 480x270 book spread */
   map: { x: number; y: number; icon: string };

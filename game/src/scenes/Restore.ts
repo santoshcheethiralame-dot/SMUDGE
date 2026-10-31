@@ -63,6 +63,7 @@ export class Restore extends Phaser.Scene {
       .setOrigin(0.5).setAlpha(0);
     await tween(this, { targets: sub, alpha: 1, duration: 500 });
     await wait(this, 900);
+    await c.restore.reveal?.(this);
 
     // Formula Card
     const card = this.add.container(W / 2, 170).setScale(0.2).setAlpha(0);
@@ -76,6 +77,10 @@ export class Restore extends Phaser.Scene {
     await tween(this, { targets: card, scale: 1, alpha: 1, angle: -3, duration: 420, ease: "Back.easeOut" });
     this.tweens.add({ targets: shine, x: 60, duration: 900, repeat: -1, repeatDelay: 1200 });
     await wait(this, 2600);
+    if (c.restore.after) {
+      card.destroy();
+      await c.restore.after(this);
+    }
     this.cameras.main.fadeOut(700, 5, 6, 15);
     await wait(this, 720);
     this.scene.start("CaseSolved");

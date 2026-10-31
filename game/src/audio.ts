@@ -7,6 +7,7 @@ import * as Tone from "tone";
 import { voiceOf, type Voice } from "./audio/voices";
 import { THEMES, steps, type Theme } from "./audio/themes";
 import { place } from "./audio/ambience";
+import { speaking } from "./systems/voice";
 
 let started = false;
 let starting: Promise<void> | null = null;
@@ -113,7 +114,7 @@ export function blipEvery(who: string) { return voiceOf(who).every; }
 
 /** One syllable of a character's voice. */
 export function blip(who: string) {
-  if (!started) return;
+  if (!started || speaking()) return;
   const v = voiceOf(who);
   const s = voiceSynth(who, v);
   const now = Tone.now();

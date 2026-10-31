@@ -3,6 +3,8 @@ import { W, H, FONT, DISPLAY, FEET_ORIGIN, project, dirFromVector, Dir } from ".
 import { Dialogue, Line } from "../systems/dialogue";
 import { makeGlow, makeCone, makePixel, dust, wait, tween, pageReveal, pageTurn } from "../systems/fx";
 import { sfx, music, step, layer, ambience } from "../audio";
+import { progress } from "../state";
+import { CASES, CASE_ORDER } from "../cases";
 
 const C = { cu: 0, cv: 88 };
 const P = (x: number, y: number, z: number) => project(x, y, z, C.cu, C.cv);
@@ -37,6 +39,21 @@ export class HQ extends Phaser.Scene {
 
   constructor() { super("HQ"); }
 
+  /** Solved cases earn a Formula Card. There are five frames, so they hold the five most recent; the full list is read out at the wall. */
+  private solvedCards() {
+    return [...progress.solvedCases].map((k) => CASES[k]).filter(Boolean);
+  }
+  private fillFrames() {
+    const shown = this.solvedCards().slice(-5);
+    const tints = [0xfac775, 0xf4a6c6, 0x9ad0f0, 0xb7e3a1, 0xf2e9cf];
+    shown.forEach((c, i) => {
+      const { x, y } = P([-12, 5, 22, 39, 56][i], 62, -40);
+      const sym = c.restore.card.split(/[=<]/)[0].trim().slice(0, 3);
+      this.add.rectangle(x, y, 10, 14, tints[i % tints.length]).setStrokeStyle(1, 0x0e1938);
+      this.add.text(x, y, sym, { fontFamily: FONT, fontSize: "7px", color: "#0E1938" }).setOrigin(0.5);
+    });
+  }
+
   create(data: { from?: string }) {
     this.busy = false;
     this.briefed = false;
@@ -45,6 +62,7 @@ export class HQ extends Phaser.Scene {
     makeCone(this, "cone", 180, 200);
     makePixel(this);
     this.add.image(0, 0, "hq").setOrigin(0, 0);
+    this.fillFrames();
 
     // light: the thimble lamp breathes, the doorway pours warm light in
     const thimble = P(34, 35, -10);
@@ -240,11 +258,21 @@ export class HQ extends Phaser.Scene {
         }
         break;
       case "cards":
-        await this.talk([
-          { who: "foot", expr: "neutral", text: "Formula frames. Every law you win back earns a Formula Card, and it goes up here." },
-          { who: "smudge", expr: "worried", text: "They're all empty." },
-          { who: "foot", expr: "happy", text: "For now!" },
-        ]);
+        {
+          const won = this.solvedCards();
+          if (!won.length) {
+            await this.talk([
+              { who: "foot", expr: "neutral", text: "Formula frames. Every law you win back earns a Formula Card, and it goes up here." },
+              { who: "smudge", expr: "worried", text: "They're all empty." },
+              { who: "foot", expr: "happy", text: "For now!" },
+            ]);
+          } else {
+            await this.talk([
+              { who: "foot", expr: "happy", text: `${won.length} of ${CASE_ORDER.length} laws are back in the book!` },
+              ...won.map((c): Line => ({ who: "foot", expr: "neutral", text: `${c.restore.card}  (${c.restore.cardSub})` })),
+            ]);
+          }
+        }
         break;
       case "hatrack":
         await this.talk([

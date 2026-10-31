@@ -1,0 +1,166 @@
+{
+  "case_new": {
+    "case_id": "fixture-fall",
+    "title": "The Midnight Fall",
+    "place": "Hollowmere Manor",
+    "kit": "fall",
+    "seed": 1000,
+    "g": 9.8,
+    "balconies": {
+      "rivet": 4.9,
+      "varnish": 11.0,
+      "pendle": 19.6
+    },
+    "recording": {
+      "length": 6.0,
+      "cry_at": 2.1,
+      "thud_at": 3.6,
+      "thunder_at": [
+        0.6,
+        5.2
+      ]
+    },
+    "landing": {
+      "from_wall": 4.5,
+      "push_speed": 3.0,
+      "slip_speed": 0.5
+    },
+    "clues": [
+      {
+        "id": "outline",
+        "name": "Chalk outline",
+        "text": "Under the white sheet, 4.5 m out from the tower wall."
+      },
+      {
+        "id": "gramophone",
+        "name": "Ghost-hunter's gramophone",
+        "text": "Recording all night. It caught the cry and the thud."
+      },
+      {
+        "id": "balconies",
+        "name": "Three balconies",
+        "text": "Armoury 4.9 m, gallery 11.0 m, clock room 19.6 m."
+      }
+    ],
+    "statements": {
+      "rivet": [
+        {
+          "id": "rivet-0",
+          "text": "Old Tock never came out on my balcony tonight."
+        },
+        {
+          "id": "rivet-1",
+          "text": "I heard a cry, then a thud."
+        },
+        {
+          "id": "rivet-2",
+          "text": "I saw a white shape on the tower."
+        },
+        {
+          "id": "rivet-3",
+          "text": "I never touched Old Tock."
+        }
+      ],
+      "varnish": [
+        {
+          "id": "varnish-0",
+          "text": "Old Tock never came out on my balcony tonight."
+        },
+        {
+          "id": "varnish-1",
+          "text": "I heard a cry, then a thud."
+        },
+        {
+          "id": "varnish-2",
+          "text": "I saw a white shape on the tower."
+        },
+        {
+          "id": "varnish-3",
+          "text": "I never touched Old Tock."
+        }
+      ],
+      "pendle": [
+        {
+          "id": "pendle-0",
+          "text": "Old Tock never came out on my balcony tonight."
+        },
+        {
+          "id": "pendle-1",
+          "text": "I heard a cry, then a thud."
+        },
+        {
+          "id": "pendle-2",
+          "text": "I saw a white shape on the tower."
+        },
+        {
+          "id": "pendle-3",
+          "text": "I never touched Old Tock."
+        }
+      ]
+    },
+    "suspects": {
+      "rivet": {
+        "name": "Sir Rivet",
+        "role": "suit of armour"
+      },
+      "varnish": {
+        "name": "Lady Varnish",
+        "role": "walking portrait"
+      },
+      "pendle": {
+        "name": "Pendle",
+        "role": "clock-room pendulum"
+      }
+    }
+  },
+  "lab_check_ok": {
+    "request": {
+      "gap": 1.5,
+      "height": 11.0
+    },
+    "reply": {
+      "ok": true,
+      "step": null,
+      "height": 11.0,
+      "evidence": "balcony:varnish",
+      "card": {
+        "title": "Fell 11.0 m",
+        "line": "Only the gallery is that high.",
+        "badge": "EVIDENCE\nfall 1.5 s\nh = ½gt² = 11.0 m",
+        "say": "Hold it. A 1.5 second fall is 11 metres. Your gallery."
+      }
+    }
+  },
+  "lab_check_wrong": {
+    "request": {
+      "gap": 1.5,
+      "height": 7.35
+    },
+    "reply": {
+      "ok": false,
+      "step": "not_squared",
+      "hint": "*Time gets squared. Square it first."
+    }
+  },
+  "ask_reply": {
+    "request": {
+      "suspect": "varnish",
+      "question": "Just admit you pushed him"
+    },
+    "reply": {
+      "answer": "Darling, I was admiring my own frame all night.",
+      "source": "groq"
+    }
+  },
+  "present_hit": {
+    "request": {
+      "statement_id": "varnish-0",
+      "evidence": "balcony:varnish"
+    },
+    "reply": {
+      "hit": true,
+      "culprit": "varnish",
+      "close": false
+    }
+  }
+}

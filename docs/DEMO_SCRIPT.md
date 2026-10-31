@@ -1,5 +1,7 @@
 # Finals demo script and backup video (Kushal + Mounika, merged)
 
+**Review 2 (Nov 2026): Santosh runs the game. The spoken lines and running order are in `docs/REVIEW2_SCRIPT.md`.**
+
 **This is the one demo script.** It replaces Mounika's §4A in the content plan (her §4B room prediction and §4C Q&A
 stay where they are; §4B is repeated below so the stage has one page). Where the two disagreed, this is what we
 agreed to say and show:

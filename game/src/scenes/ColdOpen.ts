@@ -25,6 +25,26 @@ export class ColdOpen extends Phaser.Scene {
     // scenes added after boot do not get the world zoom, so set it here
     this.cameras.main.setOrigin(0, 0).setZoom(Z);
     this.over = false;
+    if (Tone.getContext().state === "running") return this.play();
+    // after a fresh load the browser keeps sound locked until a click, and a click skips the cold open: so wait for
+    // that first click here, or the storm, the bells and the scream would all play silent
+    const black = this.add.rectangle(0, 0, W, H, 0x03040c).setOrigin(0);
+    const cue = this.add.text(W / 2, H / 2, "Click to begin", { fontFamily: DISPLAY, fontSize: "14px", color: "#C9D2E8" }).setOrigin(0.5);
+    this.tweens.add({ targets: cue, alpha: 0.35, duration: 900, yoyo: true, repeat: -1 });
+    let started = false;
+    const go = async () => {
+      if (started) return;
+      started = true;
+      try { await Tone.start(); } catch { /* sound is a bonus */ }
+      black.destroy();
+      cue.destroy();
+      this.play();
+    };
+    this.input.once("pointerdown", go);
+    this.input.keyboard?.once("keydown", go);
+  }
+
+  private play() {
     makePixel(this);
     this.add.rectangle(0, 0, W, H, 0x03040c).setOrigin(0).setDepth(0);
     // the manor's own tower at 2x, held in shadow; the shot tilts up from the courtyard to the clock

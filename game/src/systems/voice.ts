@@ -37,9 +37,8 @@ function pickVoice(who: string): SpeechSynthesisVoice | null {
   const quality = (x: SpeechSynthesisVoice) => (/natural|online/i.test(x.name) ? 0 : /google/i.test(x.name) ? 1 : 2);
   const good = pool.filter((x) => quality(x) < 2);
   const ranked = (good.length >= 2 ? good : pool).slice().sort((x, y) => quality(x) - quality(y) || x.name.localeCompare(y.name));
-  const fixed: Record<string, number> = { smudge: 0, foot: 1 };
   const h = [...who].reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7) >>> 0;
-  return ranked[(fixed[who] ?? 2 + (h % Math.max(1, ranked.length - 2))) % ranked.length];
+  return ranked[h % ranked.length];
 }
 if ("speechSynthesis" in window) speechSynthesis.getVoices();   // voices load lazily in Chrome; warm the list
 
@@ -67,7 +66,18 @@ export function speak(who: string, text: string): Promise<void> {
     const guard = setTimeout(() => done(), 1500 + text.split(/\s+/).length * 450);
     const done = () => { clearTimeout(guard); if (finish === done) { finish = null; talking = false; } resolve(); };
     finish = done;
-    u.onend = u.onerror = done;
+    u.onend = done;
+    // a chosen voice that fails (a network voice with no network, say) would leave that speaker mute: retry once with the default voice
+    u.onerror = (e) => {
+      const why = (e as SpeechSynthesisErrorEvent).error;
+      if (u.voice && why !== "interrupted" && why !== "canceled" && finish === done) {
+        const again = new SpeechSynthesisUtterance(text);
+        again.pitch = u.pitch; again.rate = u.rate; again.lang = "en-IN";
+        again.onend = again.onerror = done;
+        try { speechSynthesis.speak(again); return; } catch { /* fall through */ }
+      }
+      done();
+    };
     try { speechSynthesis.speak(u); } catch { done(); }
   });
 }

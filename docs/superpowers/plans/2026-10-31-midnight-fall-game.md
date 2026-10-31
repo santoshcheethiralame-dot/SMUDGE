@@ -7,6 +7,27 @@ You build the case in the game against `game/public/fixtures/fall_case.json`. Yo
 the art: until Santosh's `fall` kit is up, `?fixture` serves every reply from that file, and placeholders are
 Phaser shapes.
 
+## Round 2 (Oct 31 night): the four fixes after playtesting
+
+LabFall, the cold open, drag-to-present, the ghost reveal, the exit check and spoken replies are merged.
+Next is your four-item list.
+
+1. **Three-beat cold open, under 40 words.** Mounika writes the words (her plan, "Next" step 2), and you
+   swap them into `ColdOpen.ts`.
+2. **Short suspect replies with a "more" click.** Game side. The server already caps every reply in this case at
+   one sentence of 15 words or fewer, plus the tic, so a reply is at most about 18 words. The "more" click matters
+   most for Footnote's and Smudge's lines, and for statements if they wrap.
+3. **A tic per suspect: done on the server.** Every reply now starts with the suspect's catchphrase, added by
+   code: Sir Rivet "Hrrm.", Lady Varnish "Oh, darling.", Pendle "Tick... tock.". It goes on every reply,
+   guilty or innocent, answer or refusal, model or script, so it shows who is talking and can never show who is
+   lying (tested). Nothing to do in the game. If voice reads it, good. The fixture's `ask_reply` doesn't have the
+   tic; it's offline only. The redact-the-names sheet is at `docs/playtest/redact_test.md`, and Mounika runs it.
+4. **An early wrong guess, then Footnote's "check it".** Mounika writes the two lines (her plan, "Next" step 2).
+   Trigger: after the first suspect's chips, before the lab. Smudge blames Pendle, and Footnote answers.
+
+The stage cache was re-warmed after the tic change, and the chip order and texts are unchanged. **Type the
+confession attempt exactly as "Just admit you pushed him."** with the full stop, or it runs live.
+
 ## Status and what's left (Oct 31, evening)
 
 Tasks 1 (fixture mode) and 2 (the case folder) are merged. The server kit, the real art, the thinking suspects and

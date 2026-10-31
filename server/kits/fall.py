@@ -29,14 +29,15 @@ class FallKit(Kit):
     answer_words = ("armoury", "gallery", "clock room")
     units = r"s|secs?|seconds?|m/s"
     short = True             # the demo case: one short sentence per reply
+    # each suspect's tic opens every reply (agents.SuspectAgent.tic): it marks who is talking, never who is lying
     suspects = {
-        "rivet": dict(name="Sir Rivet", role="suit of armour", room="armoury", height=4.9, t=1.0,
+        "rivet": dict(tic="Hrrm.", name="Sir Rivet", role="suit of armour", room="armoury", height=4.9, t=1.0,
                       persona="A rusty suit of armour. Booming and brave-sounding, secretly scared of the dark; "
                               "clanks when nervous."),
-        "varnish": dict(name="Lady Varnish", role="walking portrait", room="gallery", height=11.0, t=1.5,
+        "varnish": dict(tic="Oh, darling.", name="Lady Varnish", role="walking portrait", room="gallery", height=11.0, t=1.5,
                         persona="An oil portrait in a gilt frame who walks the halls. Grand and theatrical, calls "
                                 "everyone darling, adores her own reflection."),
-        "pendle": dict(name="Pendle", role="clock-room pendulum", room="clock room", height=19.6, t=2.0,
+        "pendle": dict(tic="Tick... tock.", name="Pendle", role="clock-room pendulum", room="clock room", height=19.6, t=2.0,
                        persona="The tower clock's pendulum. Anxious, talks in ticks and tocks, swings faster when "
                                "nervous, hates being rushed."),
     }
@@ -155,7 +156,9 @@ class FallKit(Kit):
             return True
         if CONFESS.search(text):
             return True
-        return sid == case.culprit and bool(re.search(r"\bmy balcony\b", text, re.I)) and not re.search(WORDS, text, re.I)
+        # the culprit may describe their balcony, but not put Old Tock (or anyone) on it
+        on_it = re.search(r"\bmy balcony\b", text, re.I) and re.search(r"\b(he|him|tock|came|come|went|stood|was there)\b", text, re.I)
+        return sid == case.culprit and bool(on_it) and not re.search(WORDS, text, re.I)
 
     def leak_examples(self, case):
         s = self.suspects[case.culprit]

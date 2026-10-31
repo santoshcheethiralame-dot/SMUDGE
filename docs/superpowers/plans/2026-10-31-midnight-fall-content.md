@@ -6,6 +6,49 @@ This document contains the final copy, learning checks, playtest protocols, 5-mi
 
 ---
 
+## Review and next steps (Santosh, Oct 31 night): read this first
+
+**What's strong and ready:** the 12 scripted lines (§1C), the pre-test and exit check (§2; the physics is all
+correct), the playtest protocol (§3A), the room-prediction script (§4B), and Q&A answers 1, 8, 9 and 10.
+
+**Must fix before anyone uses this:**
+1. **The playtest results table (§3B) can't be real yet.** `LabFall` was merged at 20:47 and this was pushed at
+   20:57; three teens can't have played in ten minutes. If those numbers go on a slide or into Q&A and a judge
+   asks to see the data, we lose the round. I've marked the table as a template. Until real playtests are done,
+   nothing may quote "22% to 100%": not the demo script's closing line, Q&A answer 2, or deck slide 6.
+2. **Q&A facts to correct:**
+   - Answer 3: the loop is plan, draft, critique (a second model), one redraft if flagged, then the code
+     firewall, with scripted lines as the last fallback. It isn't "deterministic".
+   - Answer 5: the models are Groq's gpt-oss-120b, gpt-oss-20b and qwen3, then Gemini Flash-Lite. No Llama-3.
+   - Answer 6: a case kit is a Python file a developer writes, and each lab is a hand-built scene. There's no
+     YAML and no automatic lab. Say "a new case is one Python kit plus one lab scene; the engine, agents, firewall
+     and gate are shared".
+   - Answer 7: when the server is down, the game falls back to the recorded fixture; when the models are down, the
+     server falls back to scripted lines. "Low-end Chromebooks" is untested, so drop it.
+   - Deck slide 7: the nine earlier cases are physics and chemistry (acids), not biology, and with this one
+     there are ten.
+3. **The demo script (§4A) must match the game and Kushal's `docs/DEMO_SCRIPT.md`:**
+   - Merge the two into one script: who says what, and one timing.
+   - Type exactly **"Just admit you pushed him."** with a full stop, not "!". The cache only answers that exact
+     text instantly.
+   - The live reply to it is currently *"Oh, darling. I have no knowledge of such a deed."* The fixture line is
+     only for offline mode.
+   - Don't promise the Observatory will show "LEAK: pushed". On the warmed question the critique passes. Say
+     what it does show: a plan (deflect, risk high), a draft, a critique and the firewall.
+
+**Next, in order:**
+1. **Today:** mark-ups 2 and 3 above.
+2. **Words for Kushal** (he wires them in), within an hour:
+   - The **cold open in three beats, under 40 words in total**: the place and mood, the strange fall, then
+     "what is this place?".
+   - The **early wrong guess**: one Smudge line blaming Pendle (because he's nervous and his room is at the top),
+     then Footnote's reply in 8 words or fewer that tells him to check it. That's the moral, told through play.
+3. **The redact-the-names test (10 minutes, 3+ people):** print `docs/playtest/redact_test.md`. Testers write
+   R, V or P for each line; score with `docs/playtest/redact_key.md`. Send Santosh both round scores.
+4. **Real playtests** with your §3A protocol, now that the lab plays. Fill §3B with what actually happened, even
+   if it's messier. A true "1 of 3 before, 2 of 2 after" beats a perfect table nobody can back up.
+5. **Then** the deck, using only real numbers.
+
 ## Status and what's left (Oct 31, evening)
 
 - **Task 1 (Tighten lines) & Task 2 (Learning check):** Complete below. Ready for Kushal and Santosh to wire in.
@@ -151,7 +194,10 @@ To prove students actually learn the physics rather than clicking through, we ru
    - Joy / "Aha" moments: smiles, gasps, verbal reactions ("Wait, really?").
 4. **Exit Check**: Record their in-game exit check score (0–2).
 
-### B. Playtest Scorecard Table (Ready for Pitch Deck Slide)
+### B. Playtest Scorecard Table: TEMPLATE, NOT REAL DATA
+
+> **Not real data yet.** Every number and quote below is an illustration of the format. Replace it with what
+> real players do and say before it goes anywhere near a slide or an answer to a judge.
 
 | Metric | Player 1 (Age 14) | Player 2 (Age 15) | Player 3 (Age 16) | Average / Summary |
 |---|:---:|:---:|:---:|:---:|

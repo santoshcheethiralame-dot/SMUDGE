@@ -17,7 +17,7 @@ from envrender import Obj, World, Light, gradient_sky, moon, stars, BAYER4, hexr
 from src import sdf
 
 (COBBLE, COBBLE_D, STONE, STONE_D, SLATE, WINDOW, DARKWIN, CANDLE, WOOD, IRON, CHALK, SHEET, GHOST, BRASS, GILT,
- ARMOUR, BANNER_R, SIGN, SIGN_INK, YEW, GRAVE, VINYL, PUDDLE, OILG) = range(1, 25)
+ ARMOUR, BANNER_R, SIGN, SIGN_INK, YEW, GRAVE, VINYL, PUDDLE, OILG, TAPE, TAPE_INK, MARKER, FELT, BLOOD) = range(1, 30)
 
 W, H = 720, 270
 CENTRE = (0.0, 90.0)
@@ -87,6 +87,19 @@ def _lantern(p, d, mat, x, y, z):
     return d, mat
 
 
+def _outline(u, v):
+    """Signed distance to a body lying sprawled, head to the left, in (u, v) metres*10 on the ground (v already unsquashed)."""
+    def seg(ax, av, bx, bv, r):
+        px, pv, dx, dv = u - ax, v - av, bx - ax, bv - av
+        h = np.clip((px * dx + pv * dv) / (dx * dx + dv * dv), 0, 1)
+        return np.hypot(px - dx * h, pv - dv * h) - r
+    d = np.hypot(u + 14.5, v - 0.5) - 2.8                                  # head
+    for a in ((-9, 0, 3, 0, 3.0), (-7, -2.6, -12.5, -8.5, 1.2), (-6, 2.6, 1, 7.6, 1.2),
+              (2.5, -1.6, 13, -4.6, 1.5), (2.5, 1.6, 12.5, 4.8, 1.5)):  # torso, an arm flung up, an arm down, two legs
+        d = np.minimum(d, seg(*a))
+    return d
+
+
 def _sky(glitch):
     """Storm sky: moon behind a band of cloud, stars above, a far hill and a ragged treeline at the horizon."""
     sky = gradient_sky(W, H, "#04050C", "#1C2140", glow=(590, 34, 190, "#343C66"))
@@ -144,6 +157,12 @@ def materials(glitch):
         WOOD: dict(ramp=["#140A04", "#22120A", "#341C10", "#4A2A18", "#623A22"]),
         IRON: dict(ramp=["#05060A", "#0C0E14", "#16191F", "#22262E"], gloss=20, spec="#9098A8"),
         CHALK: dict(ramp=["#B8BCC8", "#D8DCE6", "#F2F4FA"]),
+        TAPE: dict(ramp=["#6A5208", "#A8820E", "#D8AE1A", "#F6D23C"],
+                   sub=(lambda p: np.floor((p[:, 0] + p[:, 1] + p[:, 2] + 900) / 2.6) % 2 == 0, TAPE_INK)),
+        TAPE_INK: dict(ramp=["#050507", "#0C0C10", "#16161C"]),
+        MARKER: dict(ramp=["#6A5208", "#A8820E", "#D8AE1A", "#F6D23C", "#FFE878"]),
+        FELT: dict(ramp=["#060608", "#0E0E14", "#18181F", "#24242E"]),
+        BLOOD: dict(ramp=["#2A0306", "#4A080C", "#6E1014", "#8E1A1A"], gloss=50, spec="#D87070"),
         SHEET: dict(ramp=["#5A6070", "#8890A0", "#B4BAC8", "#D8DCE6", "#F2F4FA"]),
         GHOST: dict(ramp=["#6A9AFF", "#A8C8FF", "#E8F2FF"], emissive=True),
         BRASS: dict(ramp=["#4A2E08", "#7A5012", "#AC7A22", "#D8A63E", "#F6D070"], gloss=24, spec="#FFF4C8"),
@@ -165,14 +184,14 @@ def build(glitch=True):
 
     def ground(p):
         x, z = p[:, 0], p[:, 2]
-        # a rough figure in chalk round the sheet: body, head, an arm flung out
-        bx, bz = x - BODY_X, z - BODY_Z
-        body = np.abs(np.hypot(bx / 22.0, bz / 11.0) - 1.0) < 0.14
-        head = np.abs(np.hypot(bx + 27.0, bz + 1.0) - 5.4) < 1.2
-        arm = (np.abs(bz - 9.0 - 0.3 * (bx - 8.0)) < 1.2) & (bx > 8.0) & (bx < 30.0)
-        chalk = body | head | arm
+        # the chalk outline of where he lay; depth is stretched 2.4x so the figure reads through the camera's tilt
+        u, v = x - BODY_X, (z - BODY_Z) / 2.4
+        chalk = np.abs(_outline(u, v)) < 0.75
+        # a dark, dried stain spreading from under the head: no splatter, nothing graphic
+        a = np.arctan2(v - 1.0, u + 17.0)
+        blood = np.hypot((u + 17.0) / 5.0, (v - 1.0) / 3.4) < 1.0 + 0.16 * np.sin(5 * a) + 0.08 * np.sin(11 * a + 1)
         puddle = (np.hypot((x + 40) / 22, (z + 14) / 6) < 1) | (np.hypot((x - 250) / 18, (z - 8) / 5) < 1)
-        return p[:, 1], np.where(chalk, CHALK, np.where(puddle, PUDDLE, COBBLE))
+        return p[:, 1], np.where(chalk, CHALK, np.where(blood, BLOOD, np.where(puddle, PUDDLE, COBBLE)))
     objs.append(Obj(ground, (-400, -2, -340), (400, 0.2, 260), "ground"))
 
     # the main house: coursed stone, a steep slate roof, pointed windows; armoury door left, gallery doors right
@@ -246,13 +265,28 @@ def build(glitch=True):
         return d, mat
     objs.append(Obj(tower, (120, -1, -140), (180, 238, -74), "tower"))
 
-    # the crime scene: a white sheet over Old Tock, inside the chalk
+    # the crime scene: police tape on four iron posts, a lantern on the corner, three evidence tents,
+    # Old Tock's top hat where it rolled and his pocket watch by his hand
+    POSTS = ((BODY_X - 48, FRONT + 4), (BODY_X - 48, BODY_Z + 49), (BODY_X + 48, BODY_Z + 49), (BODY_X + 48, FRONT + 4))
     def scene(p):
-        lump = sdf.smin(sdf.ellipsoid(p, (BODY_X + 2, 0.0, BODY_Z), (15.0, 5.6, 6.4)),
-                        sdf.ellipsoid(p, (BODY_X - 15, 0.0, BODY_Z - 0.6), (4.8, 5.0, 4.8)), 2.0)
-        drape = sdf.ellipsoid(p, (BODY_X, 0.0, BODY_Z), (20.0, 1.4, 9.4))
-        return sdf.smin(lump, drape, 1.6), SHEET
-    objs.append(Obj(scene, (BODY_X - 26, -1, BODY_Z - 12), (BODY_X + 26, 8, BODY_Z + 12), "scene"))
+        d, mat = np.full(len(p), 1e9), np.full(len(p), IRON)
+        for px, pz in POSTS:
+            d, mat = _put(d, mat, sdf.capsule(p, (px, 0, pz), (px, 10.0, pz), 1.1), SIGN)
+        for (ax, az), (bx, bz) in zip(POSTS, POSTS[1:]):
+            c = np.array([(ax + bx) / 2, 7.0, (az + bz) / 2])
+            d, mat = _put(d, mat, sdf.box(p - c, (max(abs(bx - ax) / 2, 0.9), 1.3, max(abs(bz - az) / 2, 0.3))), TAPE)
+        d, mat = _lantern(p, d, mat, BODY_X + 48, 12.0, BODY_Z + 49)
+        for k, (mx, mz) in enumerate(((BODY_X - 26, BODY_Z + 12), (BODY_X + 20, FRONT + 12), (BODY_X + 30, BODY_Z + 20))):
+            q = p - [mx, 0, mz]
+            tent = np.maximum(np.maximum(np.abs(q[:, 0]) - 3.4, np.abs(q[:, 2]) * 1.5 + q[:, 1] - 5.6), -q[:, 1])
+            spot = (np.abs(q[:, 0]) < 1.3) & (np.abs(q[:, 1] - 2.4) < 1.2)
+            d, mat = _put(d, mat, tent, np.where(spot, SIGN_INK, MARKER))
+        hat = (p - [BODY_X + 30, 3.0, BODY_Z + 10]) @ sdf.rot_z(np.pi / 2)
+        d, mat = _put(d, mat, sdf.cylinder_y(hat, 2.8, 3.6, 0.3), FELT)
+        d, mat = _put(d, mat, sdf.cylinder_y(hat - [0, -3.6, 0], 4.8, 0.35, 0.2), FELT)
+        d, mat = _put(d, mat, sdf.cylinder_y(p - [BODY_X - 3, 0.3, BODY_Z + 21], 1.7, 0.3, 0.1), BRASS)
+        return d, mat
+    objs.append(Obj(scene, (BODY_X - 52, -1, FRONT), (BODY_X + 52, 16, BODY_Z + 54), "scene"))
 
     # the ghost-hunter's gramophone on a little table
     def gramophone(p):
@@ -352,6 +386,7 @@ def build(glitch=True):
         lights.append(Light((TOWER_X, hb + 9, FRONT + 10), "#F8B860", 0.35, 30, shadow=False))
     for lx, ly in ((-234, 28), (-127, 32), (-93, 32)):          # the door lanterns
         lights.append(Light((lx, ly, -150 + 46), "#F8B060", 0.55, 48, shadow=False))
+    lights.append(Light((BODY_X + 48, 12, BODY_Z + 52), "#F8D090", 0.7, 80, shadow=False))   # the lantern over the tape
     if not glitch:
         lights += [Light((-160, 70, -100), "#FFC870", 0.7, 160, shadow=False)]
     else:

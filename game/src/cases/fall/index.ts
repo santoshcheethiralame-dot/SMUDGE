@@ -15,7 +15,7 @@ const LAB = FALL.district;
 const BALCONIES: { id: string; label: string }[] = [
   { id: "rivet", label: "Sir Rivet's armoury" }, { id: "varnish", label: "Lady Varnish's gallery" }, { id: "pendle", label: "Pendle's clock room" }];
 const CLUES: { id: string; tag: string; at: World3; w: number; h: number; note: string }[] = [
-  { id: "sheet", tag: "SHEET", at: LAB.clues.sheet as World3, w: 90, h: 40, note: "A chalk outline. A white sheet." },
+  { id: "sheet", tag: "SHEET", at: LAB.clues.sheet as World3, w: 90, h: 40, note: "A chalk outline. His top hat. His pocket watch." },
   { id: "gramophone", tag: "RECORDER", at: LAB.clues.gramophone as World3, w: 40, h: 36, note: "It recorded all night." },
   { id: "tower", tag: "TOWER", at: LAB.clues.tower as World3, w: 90, h: 120, note: "Three balconies. Three heights." },
 ];

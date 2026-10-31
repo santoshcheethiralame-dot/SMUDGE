@@ -168,8 +168,16 @@ def lab_tower():
     d.line((404, GROUND + 5, 418, GROUND + 5), fill="#9AA4C8")
     d.rectangle((WALL_X - 2, GROUND + 5, WALL_X + 222, GROUND + 20), fill="#101018")
     ox = round(WALL_X + OUTLINE_M * PX_PER_M)
-    d.ellipse((ox - 16, GROUND - 1, ox + 16, GROUND + 5), outline="#F2F4FA")
-    d.ellipse((ox - 24, GROUND, ox - 16, GROUND + 4), outline="#F2F4FA")
+    # the same chalk figure as the courtyard, seen low across the ground, and an evidence tent beside it
+    from scene_manor import _outline
+    yy, xx = np.mgrid[GROUND - 5:GROUND + 9, ox - 20:ox + 18]
+    fig = np.abs(_outline((xx - ox) - 1.0, (yy - GROUND - 2.0) / 0.62)) < 0.95
+    d.ellipse((ox - 22, GROUND, ox - 11, GROUND + 4), fill="#3C070B")      # the dried stain under his head
+    d.ellipse((ox - 19, GROUND + 1, ox - 14, GROUND + 3), fill="#560C0F")
+    for y, x in zip(yy[fig], xx[fig]):
+        d.point((int(x), int(y)), fill="#F2F4FA")
+    d.polygon([(ox + 22, GROUND + 2), (ox + 30, GROUND + 2), (ox + 26, GROUND - 6)], fill="#F6D23C", outline="#6A5208")
+    d.rectangle((ox + 25, GROUND - 2, ox + 26, GROUND - 1), fill=INK)
     small = _font("arialbd.ttf", 8)
     for k in range(0, 23):
         x = WALL_X + k * PX_PER_M

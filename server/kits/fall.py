@@ -79,7 +79,7 @@ class FallKit(Kit):
 
     def clues(self, hidden):
         return [
-            dict(id="outline", name="Chalk outline", text="Under the white sheet, out from the tower wall."),
+            dict(id="outline", name="Chalk outline", text="Inside the police tape, out from the tower wall."),
             dict(id="gramophone", name="Ghost-hunter's gramophone", text="Recording all night. It caught the cry and the thud."),
             dict(id="balconies", name="Three balconies", text="Armoury 4.9 m, gallery 11.0 m, clock room 19.6 m."),
         ]

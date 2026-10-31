@@ -4,6 +4,9 @@ import Phaser from "phaser";
 import type { CaseDef } from "../types";
 import { FONT, W, H } from "../../consts";
 import { sfx } from "../../audio";
+import { ColdOpen, coldOpenDone } from "../../scenes/ColdOpen";
+import { LabFall } from "../../scenes/LabFall";
+import { ghostReveal, exitCheck } from "./finale";
 
 // The backdrop art is 720x270 and the tower stands on its right third (art/world/placeholder_fall.py).
 const TOWER = { x: 630, balconies: [{ id: "rivet", y: 163, label: "Sir Rivet's armoury" },
@@ -48,7 +51,7 @@ const CASE: CaseDef = {
     pendle: [{ expr: "shocked", text: "...Nineteen metres. I... confess." }],
   },
   restore: { glyphs: ["h", " ", "=", " ", "½", "g", "t", "²"], sub: "The law of falling bodies is back in the book.",
-    card: "h = ½gt²", cardSub: "Motion · Gravitation" },
+    card: "h = ½gt²", cardSub: "Motion · Gravitation", reveal: ghostReveal, after: exitCheck },
   solved: (name) => `${name} did it. No ghost. Just gravity.`,
   assets: { folder: "case10", images: ["manor_glitch", "manor_restored", "lab_tower", "lab_gramophone"], suspects: ["rivet", "varnish", "pendle"] },
   map: { x: 400, y: 120, icon: "tower" },
@@ -63,7 +66,15 @@ const CASE: CaseDef = {
     suspects: [{ key: "rivet", x: -250, z: 8 }, { key: "varnish", x: -120, z: 8 }, { key: "pendle", x: 20, z: 8 }],
   },
   decorate(scene, _P, restored) {
+    // this case's own scenes are added here, the first time the district opens, so main.ts needs no edit
+    if (!scene.scene.get("LabFall")) scene.scene.add("LabFall", LabFall);
+    if (!scene.scene.get("ColdOpen")) scene.scene.add("ColdOpen", ColdOpen);
     if (restored) return;
+    // the cold open plays once per load, on top of the paused district
+    if (!coldOpenDone()) {
+      scene.scene.pause();
+      scene.scene.launch("ColdOpen");
+    }
     // rain, over everything but the UI
     scene.add.particles(0, 0, "px", {
       x: { min: 0, max: 760 }, y: -10, speedY: { min: 420, max: 520 }, speedX: -70, lifespan: 620, frequency: 14, quantity: 3,

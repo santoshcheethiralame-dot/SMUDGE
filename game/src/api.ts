@@ -114,6 +114,15 @@ let fallFixture: Promise<FallFixture> | null = null;
 const loadFall = () => (fallFixture ??= fetch("/fixtures/fall_case.json").then((r) => r.json() as Promise<FallFixture>));
 const isFixture = (c: CaseData) => c.case_id === "fixture-fall";
 
+/** A model can ramble; the dialogue box holds about three lines. Keep the first sentences, up to 220 characters. */
+export function tidy(text: string, max = 220): string {
+  const t = (text ?? "").trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max);
+  const end = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("! "), cut.lastIndexOf("? "));
+  return end > 60 ? cut.slice(0, end + 1) : cut.replace(/\s+\S*$/, "") + "...";
+}
+
 export class OfflineError extends Error {
   constructor(kit: string) { super(`The agent server is needed for the "${kit}" case.`); }
 }
@@ -133,6 +142,10 @@ export const api = {
       c = await post<CaseData>("/case/new", { seed: seed ?? null, kit }, 8000);
       if (!c && i < 2) await new Promise((r) => setTimeout(r, 1200));
     }
+    // the finals case plays from its fixture when the server is unreachable, so a dead network is never a dead stage
+    if (!c && kit === "fall") {
+      try { this.current = (await loadFall()).case_new; return this.current; } catch { /* no fixture either */ }
+    }
     if (!c && !(kit in OFFLINE_TRUTH)) throw new OfflineError(kit);
     this.current = c ?? offlineCase(kit);
     return this.current;
@@ -142,8 +155,8 @@ export const api = {
     const c = this.current!;
     if (isFixture(c)) return (await loadFall()).ask_reply.reply;
     if (c.offline) return { answer: "(The agent server is offline, so I can only repeat my statement.) " + c.statements[suspect][0].text, source: "offline" };
-    return (await post<{ answer: string; source: string }>("/ask", { case_id: c.case_id, suspect, question })) ??
-      { answer: "...Sorry, what? It's noisy out here. Ask me again?", source: "timeout" };
+    const r = await post<{ answer: string; source: string }>("/ask", { case_id: c.case_id, suspect, question }, 12000);
+    return r ? { ...r, answer: tidy(r.answer) } : { answer: "...Sorry, what? It's noisy out here. Ask me again?", source: "timeout" };
   },
 
   async press(statementId: string) {

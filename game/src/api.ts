@@ -101,6 +101,19 @@ function offlineLab(c: CaseData, w: Record<string, number>): LabResult {
     density_ok: ok, metal: ok ? "lead" : undefined, evidence: ok ? "density:lead" : undefined, hint: ok ? undefined : "*Check each number again, one at a time." };
 }
 
+// ?fixture serves the Midnight Fall from public/fixtures/fall_case.json, so the case plays with no server.
+const FIX = new URLSearchParams(location.search).has("fixture");
+interface FallFixture {
+  case_new: CaseData;
+  lab_check_ok: { reply: LabResult };
+  lab_check_wrong: { reply: LabResult };
+  ask_reply: { reply: { answer: string; source: string } };
+  present_hit: { request: { statement_id: string; evidence: string } };
+}
+let fallFixture: Promise<FallFixture> | null = null;
+const loadFall = () => (fallFixture ??= fetch("/fixtures/fall_case.json").then((r) => r.json() as Promise<FallFixture>));
+const isFixture = (c: CaseData) => c.case_id === "fixture-fall";
+
 export class OfflineError extends Error {
   constructor(kit: string) { super(`The agent server is needed for the "${kit}" case.`); }
 }
@@ -111,6 +124,10 @@ export const api = {
   /** A fresh case from the server (a few tries, in case it is restarting). Only Cases 1 and 2 can be played
    *  offline; any other case throws OfflineError instead of loading the wrong case. */
   async newCase(kit = "density", seed?: number) {
+    if (FIX && kit === "fall") {
+      this.current = (await loadFall()).case_new;
+      return this.current;
+    }
     let c: CaseData | null = null;
     for (let i = 0; i < 3 && !c; i++) {
       c = await post<CaseData>("/case/new", { seed: seed ?? null, kit }, 8000);
@@ -123,6 +140,7 @@ export const api = {
 
   async ask(suspect: string, question: string) {
     const c = this.current!;
+    if (isFixture(c)) return (await loadFall()).ask_reply.reply;
     if (c.offline) return { answer: "(The agent server is offline, so I can only repeat my statement.) " + c.statements[suspect][0].text, source: "offline" };
     return (await post<{ answer: string; source: string }>("/ask", { case_id: c.case_id, suspect, question })) ??
       { answer: "...Sorry, what? It's noisy out here. Ask me again?", source: "timeout" };
@@ -130,6 +148,7 @@ export const api = {
 
   async press(statementId: string) {
     const c = this.current!;
+    if (isFixture(c)) return { answer: "I stand by what I said.", source: "fixture" };
     if (c.offline) return { answer: "I stand by what I said.", source: "offline" };
     return (await post<{ answer: string; source: string }>("/press", { case_id: c.case_id, statement_id: statementId })) ??
       { answer: "I stand by what I said.", source: "timeout" };
@@ -138,12 +157,22 @@ export const api = {
   /** The player's notebook, keyed by the kit's own field names. */
   async labCheck(working: Record<string, number>): Promise<LabResult | null> {
     const c = this.current!;
+    if (isFixture(c)) {
+      const f = await loadFall();
+      const g = (c.g as number) ?? 9.8;
+      return Math.abs(working.height - 0.5 * g * working.gap ** 2) <= 0.3 ? f.lab_check_ok.reply : f.lab_check_wrong.reply;
+    }
     if (c.offline) return offlineLab(c, working);
     return post<LabResult>("/lab/check", { case_id: c.case_id, working });
   },
 
   async present(statementId: string, evidence: string) {
     const c = this.current!;
+    if (isFixture(c)) {
+      const want = (await loadFall()).present_hit.request;
+      const hit = statementId === want.statement_id && evidence === want.evidence;
+      return { hit, culprit: hit ? "varnish" : undefined, close: !hit && statementId.startsWith("varnish-") };
+    }
     if (c.offline) {
       const t = OFFLINE_TRUTH[c.kit];
       const hit = statementId === t.statement && evidence === t.evidence;
@@ -154,7 +183,7 @@ export const api = {
 
   async hint(step: string, context = "") {
     const c = this.current!;
-    if (c.offline) return "*Take it one step at a time.";
+    if (isFixture(c) || c.offline) return "*Take it one step at a time.";
     return (await post<{ hint: string }>("/hint", { case_id: c.case_id, step, context }))?.hint ?? "*Take it one step at a time.";
   },
 };

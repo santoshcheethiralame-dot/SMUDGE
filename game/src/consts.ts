@@ -31,7 +31,7 @@ export function dirFromVector(dx: number, dy: number): Dir {
 export const INK = "#0E1938";
 export const PAPER = "#F2E9CF";
 export const RED = "#C9302A";
-export const FONT = '"Smudge Digits", "Pixelify Sans", monospace';
+export const FONT = '"Smudge Digits", "DotGothic16", monospace';
 export const DISPLAY = '"Lilita One", "Trebuchet MS", sans-serif';
 /** ?judges: the stage cut (one interview opens the stage, slip-or-push is skipped) */
 export const JUDGES = new URLSearchParams(location.search).has("judges");

@@ -85,7 +85,7 @@ export const OBS_CSS = `
 #inside .stress{display:grid;gap:3px}
 #inside .stress .bar{height:6px}
 #inside .pills{line-height:2}
-#inside .pill{font:600 11px/1 "Pixelify Sans",monospace;padding:4px 6px;margin:0 3px 3px 0;border-radius:2px;cursor:pointer;
+#inside .pill{font:600 11px/1 "DotGothic16",monospace;padding:4px 6px;margin:0 3px 3px 0;border-radius:2px;cursor:pointer;
   background:transparent;border:1px solid var(--ok);color:var(--ok)}
 #inside .pill.red{border-color:var(--pen);color:#fff;background:rgba(240,90,76,.35)}
 #inside .pill.gold{border-color:var(--gold);color:var(--gold)}

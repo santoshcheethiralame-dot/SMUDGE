@@ -5,7 +5,7 @@ import { W } from "../consts";
 import { sfx } from "../audio";
 import { canListen, listen } from "./voice";
 
-const FONT = '"Smudge Digits", "Pixelify Sans", monospace';
+const FONT = '"Smudge Digits", "DotGothic16", monospace';
 
 /** Motion for the HTML overlays, injected once: slide in, shake on a wrong answer, stamp on a right one. */
 const STYLE = `

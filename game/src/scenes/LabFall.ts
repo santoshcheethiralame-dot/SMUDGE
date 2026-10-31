@@ -276,14 +276,14 @@ export class LabFall extends Phaser.Scene {
     return new Promise((resolve) => {
       const form = document.createElement("form");
       form.setAttribute("aria-label", "Notebook");
-      form.style.cssText = `font-family:"Smudge Digits","Pixelify Sans",monospace;background:#F2E9CF;border:2px solid #0E1938;border-radius:4px;
+      form.style.cssText = `font-family:"Smudge Digits","DotGothic16",monospace;background:#F2E9CF;border:2px solid #0E1938;border-radius:4px;
         padding:8px 10px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;color:#0E1938;
         background-image:repeating-linear-gradient(#F2E9CF 0 15px,#9cb8dc 15px 16px);`;
       const box = (id: string, value = "", readonly = false) =>
         `<input id="${id}" value="${value}" ${readonly ? "readonly tabindex=-1" : ""} inputmode="decimal" autocomplete="off"
           style="width:3.6em;font:inherit;padding:1px 4px;border:1.5px solid #0E1938;background:${readonly ? "#E6DCC0" : "#FFFBEF"};color:#0E1938;border-radius:3px">`;
       form.innerHTML = `<div style="font-weight:700;color:#C9302A">Notebook</div>
-        <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">h = ½ × ${box("nb-g", String(this.g), true)} × ${box("nb-t", String(this.gap), true)}² = ${box("nb-h")} m</div>
+        <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">h = 1/2 × ${box("nb-g", String(this.g), true)} × ${box("nb-t", String(this.gap), true)} × ${box("nb-t2", String(this.gap), true)} = ${box("nb-h")} m</div>
         <button type="submit" style="font:inherit;padding:4px;border:2px solid #0E1938;background:#C9302A;color:#fff;border-radius:4px;cursor:pointer">Check</button>`;
       ["pointerdown", "keydown", "keyup"].forEach((ev) => form.addEventListener(ev, (e) => e.stopPropagation()));
       const remove = overlay(this, form, 120, 110, 240, 92);
@@ -303,7 +303,7 @@ export class LabFall extends Phaser.Scene {
         } else {
           sfx("wrong");
           (document.getElementById("nb-h") as HTMLInputElement).style.borderColor = "#C9302A";
-          this.hint(r?.hint ?? "*h = ½ × g × t². Try again.");
+          this.hint(r?.hint ?? "*h = 1/2 × g × t × t. Try again.");
         }
       };
     });

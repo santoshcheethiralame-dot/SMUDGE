@@ -166,7 +166,7 @@ export class Dialogue {
     this.nameBg.width = this.nameText.width + 12;
     this.body.setX(isSmudge || isFoot || isSuspect ? TEXT_X : 24);
     this.body.setStyle({ fontStyle: line.who === "narrator" ? "italic" : "normal" });
-    this.full = line.text;
+    this.full = line.text.replace(/f(?=[fil])/g, "f\u200c");   // the pixel font draws "fi" as one odd glyph ("Arst"); a zero-width break keeps the letters apart
     this.shown = 0;
     this.hold = 0;
     // a shout, or a shock, shakes the sheet and makes the face flinch

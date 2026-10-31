@@ -390,6 +390,45 @@ export function ambience(key: string, restored = false) {
   if (started) place(key, bus.amb, restored);
 }
 
+/**
+ * A scream that falls away: three detuned sawtooth voices and a breath of noise through "aah" vowel formants
+ * (800, 1150, 2600 Hz), with vibrato. The pitch leaps up into the cry, holds, then drops as the voice falls away.
+ * old: band-limited like a gramophone horn, dry; otherwise out in the courtyard, with reverb.
+ */
+export function scream(old = false) {
+  if (!started || Tone.getContext().state !== "running") return;
+  const t = Tone.now() + 0.02, dur = 1.3;
+  const nodes: Tone.ToneAudioNode[] = [];
+  const keep = <T extends Tone.ToneAudioNode>(n: T) => (nodes.push(n), n);
+  const out = keep(new Tone.Gain(0)).connect(bus.sfx);
+  if (!old) out.connect(reverb);
+  const colour = keep(old ? new Tone.Filter({ type: "bandpass", frequency: 1300, Q: 0.8 }) : new Tone.Filter(7000, "lowpass"));
+  colour.chain(keep(new Tone.Distortion(old ? 0.35 : 0.15)), out);
+  const voice = keep(new Tone.Gain(1));
+  for (const [f, q, g] of [[800, 5, 0], [1150, 7, -3], [2600, 9, -10]]) {
+    voice.chain(keep(new Tone.Filter({ type: "bandpass", frequency: f, Q: q })), keep(new Tone.Gain(Tone.dbToGain(g))), colour);
+  }
+  const vib = keep(new Tone.LFO({ frequency: 6.2, min: -45, max: 45 }));
+  for (const r of [1, 1.006, 0.993]) {
+    const o = keep(new Tone.Oscillator({ type: "sawtooth" })).connect(voice);
+    vib.connect(o.detune);
+    o.frequency.setValueAtTime(360 * r, t);
+    o.frequency.exponentialRampToValueAtTime(880 * r, t + 0.14);
+    o.frequency.linearRampToValueAtTime(950 * r, t + 0.6);
+    o.frequency.exponentialRampToValueAtTime(380 * r, t + dur);
+    o.start(t).stop(t + dur + 0.05);
+  }
+  const breath = keep(new Tone.Noise("pink"));
+  breath.chain(keep(new Tone.Filter(1800, "highpass")), keep(new Tone.Gain(Tone.dbToGain(-12))), voice);
+  breath.start(t).stop(t + dur + 0.05);
+  vib.start(t).stop(t + dur + 0.05);
+  out.gain.setValueAtTime(0, t);
+  out.gain.linearRampToValueAtTime(old ? 0.42 : 0.32, t + 0.07);
+  out.gain.linearRampToValueAtTime(old ? 0.34 : 0.26, t + 0.7);
+  out.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  setTimeout(() => nodes.forEach((n) => { try { n.dispose(); } catch { /* gone */ } }), (dur + 4) * 1000);
+}
+
 /** Music and ambience step back while someone is talking. */
 export function duck(on: boolean) {
   if (!started || on === ducked) return;

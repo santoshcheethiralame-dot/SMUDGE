@@ -129,6 +129,16 @@ export const THEMES: Record<string, Theme> = {
       "A4 . C5 . F5 . . . E5 . . . D5 . . .", "B4 . D5 . G5 . . . . . . . . . . ."],
     lead: L("synth", "triangle", 0.15, 0.2, -16), kick: [], hat: [4, 12],
   },
+  // the Midnight Fall: a music box left running in an empty manor. D minor, a tritone that never resolves,
+  // an A chord with a flat ninth, and a slow heartbeat for a kick
+  fall: {
+    bpm: 58, pad: "triangle",
+    chords: [["D3", "A3", "F4"], ["D3", "Ab3", "F4"], ["Bb2", "F3", "D4"], ["A2", "C#4", "Bb4"]],
+    bass: ["D2", "D2", "Bb1", "A1"], bassSteps: [0],
+    motif: ["A5 . . . F5 . . . E5 . . . D5 . . .", "D5 . C#5 . D5 . . . F5 . . . Ab5 . . .",
+      "G5 . . . F5 . . . D5 . . . Bb4 . . .", "A4 . . . . . . . C#5 . . . Bb4 . . ."],
+    lead: L("fm", "sine", 1.6, 0.5, -22, { harmonicity: 7, index: 2.2 }), kick: [0, 3], hat: [],
+  },
   // cross-examination: a heartbeat under a minor-second grind
   tense: {
     bpm: 96, pad: "triangle",

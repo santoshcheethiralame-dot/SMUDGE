@@ -8,12 +8,11 @@
 //  4. the notebook: h = ½ × g × t², checked by the server.
 // Drawn over lab_tower / lab_gramophone at full opacity; every coordinate comes from fall_layout.json. Registered by cases/fall/index.ts.
 import Phaser from "phaser";
-import * as Tone from "tone";
 import { W, H, Z, FONT, DISPLAY, JUDGES } from "../consts";
 import { Dialogue } from "../systems/dialogue";
 import { makePixel, wait, tween } from "../systems/fx";
 import { overlay } from "../systems/ui";
-import { sfx, themeFor, layer, ambience } from "../audio";
+import { sfx, themeFor, layer, ambience, scream, duck } from "../audio";
 import { inkIn, inkOut } from "../systems/transition";
 import { api, LabResult } from "../api";
 import { progress } from "../state";
@@ -53,9 +52,9 @@ export class LabFall extends Phaser.Scene {
     this.gap = 0;
     this.g = Number(api.current?.g) || 9.8;
     makePixel(this);
-    themeFor("lab");
-    layer(2);
-    ambience("lab");
+    themeFor("fall");                                   // the manor's music box, quieter: pad and bass only
+    layer(1);
+    ambience("fall");
     void inkIn(this);
     this.dlg = new Dialogue(this);
     await this.recording();
@@ -140,18 +139,6 @@ export class LabFall extends Phaser.Scene {
     a.fillStyle(0xfac775).fillTriangle(-4, -8 * s, 4, -8 * s, 0, -1 * s);
     this.tweens.add({ targets: a, y: y - 4 * s, duration: 380, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
     return a;
-  }
-  /** A thin cry that rises (the same voice as the cold open). */
-  private cry() {
-    if (Tone.getContext().state !== "running") return;
-    try {
-      const s = new Tone.Synth({ oscillator: { type: "sine" }, portamento: 0.3, envelope: { attack: 0.03, decay: 0.1, sustain: 0.8, release: 0.3 } }).toDestination();
-      s.volume.value = -14;
-      s.triggerAttack("D5");
-      setTimeout(() => { try { s.setNote("B5"); } catch { /* gone */ } }, 90);
-      setTimeout(() => { try { s.triggerRelease(); } catch { /* gone */ } }, 380);
-      setTimeout(() => { try { s.dispose(); } catch { /* gone */ } }, 1500);
-    } catch { /* sound is a bonus */ }
   }
   private hint(text: string) { void this.dlg.say({ who: "foot", expr: "worried", text }); }
   private balconies(): Balcony[] {
@@ -250,8 +237,9 @@ export class LabFall extends Phaser.Scene {
     };
     const at = (t: number, fn: () => void) => this.time.delayedCall(t * 1000, fn);
     for (const th of rec.thunder_at) at(th - 0.15, () => { sfx("rumble"); ring(34); });
-    at(rec.cry_at, () => { this.cry(); ring(22); });
+    at(rec.cry_at, () => { scream(true); ring(22); });
     at(rec.thud_at, () => { sfx("thunk"); ring(28); this.cameras.main.shake(90, 0.004); });
+    duck(true);                                         // the music steps back so the record is heard
     const crackle = this.time.addEvent({ delay: 130, repeat: Math.floor(ms / 130), callback: () => { if (Math.random() < 0.45) sfx("type"); } });
     await tween(this, {
       targets: head, x: STRIP.x1, duration: ms, ease: "Linear",
@@ -262,6 +250,7 @@ export class LabFall extends Phaser.Scene {
       },
     });
     crackle.remove();
+    duck(false);
     head.destroy();
     glint.destroy();
   }

@@ -149,6 +149,16 @@ const RECIPES: Record<string, (k: Kit, restored: boolean) => void> = {
     let hi = true;
     k.every(1, 1, (t) => { k.tick(t, hi); hi = !hi; });
   },
+  fall: (k, restored) => {
+    k.noise("pink", "highpass", 2800, restored ? -40 : -32, { swell: [0.06, 0.5, 1] });                 // rain
+    if (restored) return;
+    k.noise("pink", "bandpass", 500, -30, { q: 6, lfo: [0.07, 320, 900], swell: [0.045, 0.1, 1] });     // wind howling round the tower
+    k.hum(55, "sawtooth", -40, 180);                                                                     // a drone under the floor
+    k.hum(77.8, "sawtooth", -44, 160);                                                                   // a tritone above it
+    k.every(16, 34, k.thunder);
+    k.every(7, 15, k.creak);
+    k.every(20, 40, (t) => k.bell(t, "D4"));                                                             // the clock, far off
+  },
   crossexam: (k) => {
     k.noise("brown", "lowpass", 140, -24, { swell: [0.05, 0.4, 1] });
   },

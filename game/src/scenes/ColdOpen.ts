@@ -5,7 +5,7 @@ import Phaser from "phaser";
 import * as Tone from "tone";
 import { W, H, Z, DISPLAY } from "../consts";
 import { makePixel } from "../systems/fx";
-import { sfx } from "../audio";
+import { sfx, scream } from "../audio";
 
 let played = false;
 /** True once the cold open has played (or been skipped) in this page load. */
@@ -57,7 +57,7 @@ export class ColdOpen extends Phaser.Scene {
     for (let n = 0; n < 12; n++) at(1600 + n * 600, () => { this.bell(n === 11); this.tweens.add({ targets: face, scale: 1.12, duration: 90, yoyo: true }); });
     at(9200, () => { figure.setAlpha(1); flash(420); sfx("rumble"); });
     at(9800, () => figure.setAlpha(0));
-    at(10600, () => this.cry());
+    at(10600, () => scream());
     at(12100, () => { sfx("thunk"); this.cameras.main.shake(120, 0.01); });
     at(12400, () => this.tweens.add({ targets: g, alpha: 0, duration: 200 }));
     at(13000, () => {
@@ -88,19 +88,6 @@ export class ColdOpen extends Phaser.Scene {
         modulationEnvelope: { attack: 0.002, decay: 1.2, sustain: 0, release: 0.5 } }).toDestination();
       s.volume.value = last ? -8 : -13;
       s.triggerAttackRelease("A3", 0.4);
-      this.synths.push(s);
-    } catch { /* sound is a bonus */ }
-  }
-
-  /** A thin cry that rises. */
-  private cry() {
-    if (Tone.getContext().state !== "running") return;
-    try {
-      const s = new Tone.Synth({ oscillator: { type: "sine" }, portamento: 0.4, envelope: { attack: 0.04, decay: 0.1, sustain: 0.8, release: 0.5 } }).toDestination();
-      s.volume.value = -16;
-      s.triggerAttack("D5");
-      setTimeout(() => { try { s.setNote("B5"); } catch { /* gone */ } }, 120);
-      setTimeout(() => { try { s.triggerRelease(); } catch { /* gone */ } }, 900);
       this.synths.push(s);
     } catch { /* sound is a bonus */ }
   }

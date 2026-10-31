@@ -44,7 +44,7 @@ Read against main at `dd01146`. The first two items are visible bugs on stage, s
    fixture. Rehearse on that build.
 7. **One demo script.** Merge `docs/DEMO_SCRIPT.md` with Mounika's §4A, agreeing who says what. Keep your URLs,
    failure table and recording checklist; take her room-prediction lines. The typed question must stay exactly
-   "Just admit you pushed him." The live reply is "Oh, darling. I have no knowledge of such a deed."
+   "Just admit you pushed him." The live reply is "Oh, darling. The night remains an enigmatic canvas, its secrets forever unpainted."
 
 **P2:** the backup video (your checklist), after items 1–7.
 

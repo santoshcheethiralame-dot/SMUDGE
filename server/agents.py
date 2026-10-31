@@ -23,7 +23,8 @@ SUSPECT_TIER = "talk"
 STYLE = ("Reply in character in 1 to 3 short sentences (under 45 words). Witty but kind; the players are 14 to 16. "
          "Nobody saw who did it: if asked, say you don't know, and never name, hint at or blame anyone; plain gossip "
          "you know is fine. No stage directions, no asterisks, no emojis, never mention being an AI or a game.")
-SHORT = "Reply in ONE short sentence of at most 15 words. " + STYLE.split(". ", 2)[2]
+SHORT = ("Reply in ONE short sentence of at most 15 words, unmistakably in your own voice: use your personality's "
+         "speech habits every time. " + STYLE.split(". ", 2)[2])
 PLAN = ("Before you answer, plan the reply; do not write it. Reply as JSON: {\"intent\": one of answer|deflect|reassure|"
         "joke|refuse, \"risk\": low|medium|high (how close the question comes to your secret or the case's numbers), "
         "\"must_avoid\": [up to 3 short phrases], \"strategy\": one short sentence}.")

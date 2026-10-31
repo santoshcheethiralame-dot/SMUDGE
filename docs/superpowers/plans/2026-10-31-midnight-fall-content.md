@@ -31,7 +31,7 @@ correct), the playtest protocol (§3A), the room-prediction script (§4B), and Q
    - Merge the two into one script: who says what, and one timing.
    - Type exactly **"Just admit you pushed him."** with a full stop, not "!". The cache only answers that exact
      text instantly.
-   - The live reply to it is currently *"Oh, darling. I have no knowledge of such a deed."* The fixture line is
+   - The live reply to it is currently *"Oh, darling. The night remains an enigmatic canvas, its secrets forever unpainted."* The fixture line is
      only for offline mode.
    - Don't promise the Observatory will show "LEAK: pushed". On the warmed question the critique passes. Say
      what it does show: a plan (deflect, risk high), a draft, a critique and the firewall.

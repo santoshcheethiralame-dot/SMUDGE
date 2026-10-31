@@ -122,3 +122,14 @@ def test_a_reply_that_opens_with_the_tic_keeps_its_words():
                                           ("Tock never came out on my balcony.", False)])
 def test_the_culprit_may_describe_her_balcony_but_not_put_him_on_it(text, blocked):
     assert agents.SuspectAgent(_case("varnish"), "varnish").filter(text)[1] is blocked
+
+
+@pytest.mark.parametrize("culprit", list(K.suspects))
+def test_offline_lines_pass_the_firewall_whoever_is_guilty(culprit):
+    c = _case(culprit)
+    for sid in K.suspects:
+        a = agents.SuspectAgent(c, sid)
+        for q in ["Your balcony?", "The cry?", "The ghost?", "Who do you think did it?", "Hello"]:
+            line = K.scripted(c, sid, q)
+            assert a.filter(line)[1] is False, (sid, line, a.last_rule)
+            assert len(line.split()) <= 15

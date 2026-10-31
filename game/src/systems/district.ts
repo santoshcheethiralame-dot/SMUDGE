@@ -393,7 +393,7 @@ export class District extends Phaser.Scene {
     progress.questioned.add(who);
     if (first) await this.introduce(who);
     else if (this.suspects[who]) this.focusX = (this.suspects[who].x + this.smudge.x) / 2;
-    await this.dlg.say({ ...(first ? this.content.greet[who] : { who: who as Who, expr: "neutral", text: "Back again, detective?" }), voice: true });
+    await this.dlg.say({ ...(first ? this.content.greet[who] : { who: who as Who, expr: "neutral", text: "Back again, detective?" }) });
     const sp = this.suspects[who];
     for (let i = 0; i < 8; i++) {
       this.dlg.hide();
@@ -403,7 +403,7 @@ export class District extends Phaser.Scene {
       sp?.play(`${who}_talk_S`, true);
       const r = await api.ask(who, q);
       // long replies are paged by Dialogue.say, so speech and transcript keep the full text
-      await this.dlg.say({ who: who as Who, expr: /nothing|none|never|wasn't|not me/i.test(r.answer) ? "smug" : "neutral", text: r.answer, voice: true });
+      await this.dlg.say({ who: who as Who, expr: /nothing|none|never|wasn't|not me/i.test(r.answer) ? "smug" : "neutral", text: r.answer });
       sp?.play(`${who}_idle_S`, true);
       progress.transcript.push({ who, q, a: r.answer });
     }

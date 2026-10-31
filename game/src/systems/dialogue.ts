@@ -10,7 +10,7 @@ import { speak, hush } from "./voice";
 
 // any case's suspect id works too; a suspect is anyone with a "<id>_portraits" sheet loaded
 export type Who = "smudge" | "foot" | "baron" | "narrator" | (string & {});
-/** `voice: true` speaks each page aloud as it is shown, so the voice and the text never drift apart. */
+/** Every line is spoken aloud a page at a time, so the voice and the text never drift apart; `voice: false` keeps one silent. */
 export interface Line { who: Who; text: string; expr?: string; voice?: boolean }
 
 const SMUDGE_EXPR = ["neutral", "smug", "surprised", "thinking", "determined", "happy", "worried", "angry"];
@@ -124,10 +124,10 @@ export class Dialogue {
     const pages = paginate(line.text);
     return (async () => {
       for (const text of pages) {
-        if (line.voice) void speak(line.who, text);
+        if (line.voice !== false) void speak(line.who, text);
         await this.sayPage({ ...line, text });
       }
-      if (line.voice) hush();                 // moving on cuts the voice off with the page
+      if (line.voice !== false) hush();                 // moving on cuts the voice off with the page
     })();
   }
 

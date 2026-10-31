@@ -16,6 +16,22 @@ Phaser shapes.
 | Cross-exam and restore | `CrossExam.ts`, `Restore.ts`: reuse them, change only what §4 beats 8–9 need |
 | Footnote's hints | the `step` / `hint` handling in `LabMotion.notebook()` |
 
+## The art is in: `game/public/assets/case10/`
+
+- `assets: { folder: "case10", images: ["manor_glitch", "manor_restored", "lab_tower", "lab_gramophone", "sack",
+  "sheet_ghost"], suspects: ["rivet", "varnish", "pendle"] }`. Suspect sheets have the usual names and frame sizes.
+- `sheet_ghost.png` is two 32×32 frames: the glowing ghost, then the plain sheet with pegs (for the restore).
+- `fall_layout.json` has every coordinate you need, so nothing is measured off a picture:
+  - `district`: `width`, `cu`, `cv`, the `hotspots` (x for each suspect and the stage), world positions for each
+    lightning `clues` spot and each balcony. Pass them through `project()` as usual.
+  - `tower`: the flat drop-test backdrop. `ground_y`, `px_per_m` (10), `wall_x`, each balcony's floor `{x, y}`,
+    the chalk `outline`, `drop_from_x`. A sack at time t is at `y = floor.y + ½·g·t²·px_per_m`.
+  - `gramophone`: the paper `strip` (`x0`, `x1`, `y0`, `y1`, `mid`, `px_per_s`). Draw the waveform inside it.
+- The district art: the armoury door (left), the gallery's glowing doors, the law sign, the gramophone, the sheet
+  in its chalk outline at the tower's foot, and the tower with red / green / gold banners for Rivet / Varnish /
+  Pendle. In the glitch version the washing-line sheet is the "ghost"; in the restored one it is a plain sheet.
+- The map has 9 pop-up images; case 10 needs a `map` entry, and you can reuse any icon for now.
+
 ## Tasks, in order
 
 ### 1. Fixture mode (first hour)

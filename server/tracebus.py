@@ -15,7 +15,7 @@ class Trace:
     def __init__(self):
         self.events: list[dict] = []
 
-    def emit(self, agent, kind, step, verdict="ok", meta=None, **data):
+    def emit(self, agent, kind, step, /, verdict="ok", meta=None, **data):
         meta = meta or {}
         ev = {"i": len(self.events), "t": round(time.time(), 3), "agent": agent, "kind": kind, "step": step,
               "model": meta.get("model"), "provider": meta.get("provider"), "ms": int(meta.get("ms") or 0),

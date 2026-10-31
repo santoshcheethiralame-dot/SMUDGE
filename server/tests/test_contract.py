@@ -59,3 +59,30 @@ def test_a_step_served_below_the_first_provider_adds_a_router_event():
 def test_problems_names_what_is_wrong(bad):
     ev = Trace().emit("volta", "suspect", "plan")
     assert problems({**ev, **bad})
+
+
+import llm
+
+
+class _Resp:
+    status_code = 200
+    headers = {}
+
+    def raise_for_status(self):
+        pass
+
+    def json(self):
+        return {"choices": [{"message": {"content": "Hello there."}, "finish_reason": "stop"}], "usage": {"total_tokens": 321}}
+
+
+def test_chat_reports_tokens_and_tier(monkeypatch, tmp_path):
+    monkeypatch.setattr(llm, "CACHE", tmp_path)
+    monkeypatch.setattr(llm, "PROVIDERS", [dict(name="groq", key="X_KEY", url="u", models={"fast": "m"})])
+    monkeypatch.setenv("X_KEY", "k")
+    monkeypatch.setattr(llm.httpx, "post", lambda *a, **k: _Resp())
+    meta = {}
+    assert llm.chat([{"role": "user", "content": "hi"}], tier="fast", meta=meta) == "Hello there."
+    assert meta["tokens"] == 321 and meta["tier"] == "fast" and meta["provider"] == "groq"
+    again = {}
+    llm.chat([{"role": "user", "content": "hi"}], tier="fast", meta=again)
+    assert again["cached"] is True and again["tokens"] == 0

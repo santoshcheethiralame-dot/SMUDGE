@@ -94,7 +94,7 @@ def test_trace_feeds_the_observatory_every_step_of_a_reply():
     assert client.get(f"/api/case/{cid}/trace").json()["events"] == []
     client.post("/api/ask", json={"case_id": cid, "suspect": "mu", "question": "How fast were you going?"})
     body = client.get(f"/api/case/{cid}/trace?since=0").json()
-    assert [(e["agent"], e["step"]) for e in body["events"]] == [("mu", "draft"), ("mu", "firewall"), ("mu", "reply")]
-    assert body["next"] == 3 and all(problems(e) == [] for e in body["events"])
+    assert [(e["step"], e["verdict"]) for e in body["events"]] == [("plan", "skip"), ("draft", "fallback"), ("firewall", "pass"), ("reply", "ok")]
+    assert body["next"] == 4 and all(problems(e) == [] for e in body["events"])
     assert set(body["stress"]) == {"dash", "rolla", "mu"}
-    assert client.get(f"/api/case/{cid}/trace?since=3").json()["events"] == []
+    assert client.get(f"/api/case/{cid}/trace?since=4").json()["events"] == []

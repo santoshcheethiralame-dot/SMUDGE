@@ -17,11 +17,9 @@ Read [the case spec](docs/superpowers/specs/2026-10-31-midnight-fall.md) whoever
 
 Santosh's list, in order:
 1. ~~`server/kits/fall.py` with tests; replies match the fixture exactly; 15-word reply cap.~~ Done.
-2. Gate the kit; demo seed 1000 must pass (culprit Lady Varnish).
-3. Art through the pipeline: the manor courtyard, the two lab backdrops, three suspects, the sack and the sheet
-   (spec §7).
-4. From the [server plan](docs/superpowers/plans/2026-10-30-finals-server.md): the thinking loop and stress, for
-   the Observatory.
+2. ~~Gate the kit; demo seed 1000 must pass.~~ Done: 6/6, with-lab 100%, no-lab 17%.
+3. ~~Art: the manor courtyard, the two lab backdrops, three suspects, the sack and the sheet.~~ Done, in `game/public/assets/case10/`.
+4. ~~The thinking loop and stress, for the Observatory.~~ Done: live on `/trace`.
 
 ## Milestones (hours from now)
 

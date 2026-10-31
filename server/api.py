@@ -10,6 +10,7 @@ import agents
 import kits
 import llm
 from agents import SuspectAgent, Footnote
+from stress import Stress
 from tracebus import Trace
 from truth import new_case, check_constraints, check_lab, present
 
@@ -80,11 +81,9 @@ def case_new(req: NewCase):
             break
         seed = None
     cid = f"c{case.seed}-{random.randrange(10**6)}"
-    trace = Trace()
-    agents_ = {sid: SuspectAgent(case, sid) for sid in kit.suspects}
-    for a in agents_.values():
-        a.trace = trace
-    CASES[cid] = {"case": case, "agents": agents_, "trace": trace,
+    trace, stress = Trace(), Stress(kit.suspects)
+    CASES[cid] = {"case": case, "trace": trace, "stress": stress,
+                  "agents": {sid: SuspectAgent(case, sid, trace=trace, stress=stress) for sid in kit.suspects},
                   "hints": [], "labs": [], "presents": [], "baits": []}
     return {"case_id": cid, "title": kit.title, "place": kit.place, **case.public(),
             "suspects": {sid: {"name": s["name"], "role": s["role"]} for sid, s in kit.suspects.items()}}
@@ -95,6 +94,7 @@ def ask(req: Ask):
     c = _case(req.case_id)
     if req.suspect not in c["agents"]:
         raise HTTPException(400, "unknown suspect")
+    c["stress"].asked(req.suspect, req.question)
     return c["agents"][req.suspect].ask(req.question)
 
 
@@ -105,6 +105,7 @@ def press(req: Press):
     st = next((x for x in c["case"].statements.get(sid, []) if x["id"] == req.statement_id), None)
     if st is None:
         raise HTTPException(400, "unknown statement")
+    c["stress"].pressed(sid)
     return c["agents"][sid].press(st["text"])
 
 
@@ -132,6 +133,9 @@ def hint(req: Hint):
 def present_(req: Present):
     c = _case(req.case_id)
     out = present(c["case"], req.statement_id, req.evidence)
+    sid = req.statement_id.split("-")[0]
+    if sid in c["stress"].level:
+        c["stress"].presented(sid, out["hit"])
     c["presents"].append({"statement": req.statement_id, "evidence": req.evidence, "hit": out["hit"]})
     return out
 
@@ -139,9 +143,11 @@ def present_(req: Present):
 def _coach(c, step, context):
     """Footnote's hint, logged with whether the model wrote it or the safe fallback stood in."""
     kit = kits.get(c["case"].kit)
-    text = coach.hint(kit, step, context)
-    c["hints"].append({"step": step, "context": context, "hint": text,
-                       "source": "safe fallback" if text == kit.hints.get(step) else "llm"})
+    meta: dict = {}
+    text = coach.hint(kit, step, context, meta=meta)
+    source = "safe fallback" if text == kit.hints.get(step) else "llm"
+    c["hints"].append({"step": step, "context": context, "hint": text, "source": source})
+    c["trace"].emit("footnote", "coach", "hint", "ok" if source == "llm" else "fallback", meta, step=step, text=text)
     return text
 
 
@@ -204,11 +210,9 @@ def inside(cid: str):
 
 @app.get("/api/case/{cid}/trace")
 def trace(cid: str, since: int = 0):
-    """The Observatory's live feed: every agent event from `since` on. Stress is CALM until the stress model lands."""
+    """Every agent step since event `since`, plus each suspect's stress. Polled by the Observatory."""
     c = _case(cid)
-    t = c["trace"]
-    return {"next": len(t.events), "events": t.since(since),
-            "stress": {sid: {"level": 0, "band": "CALM"} for sid in c["agents"]}}
+    return {"next": len(c["trace"].events), "events": c["trace"].since(since), "stress": c["stress"].view()}
 
 
 @app.post("/api/case/{cid}/filtertest")

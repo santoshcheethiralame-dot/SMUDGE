@@ -81,10 +81,10 @@ def _texture(erased):
         ASTERISK = (110.0, FLOOR_FRONT - 170.0)
 
     # the curled page reads like a wall: chapter heading and a tower diagram
-    _stamp(tex, "CHAPTER 10", _font("georgiab.ttf", 15), -60, S_FLAT + 128, 1.12, PRINT_RED)
+    _stamp(tex, "CHAPTER 10", _font("georgiab.ttf", 17), -60, S_FLAT + 124, 1.5, PRINT_RED)
     _stamp(tex, "Falling Bodies", _font("georgiab.ttf", 40), -78, S_FLAT + 64, 1.12, PRINT)
-    _stamp(tex, "Why do things fall faster and faster?", _font("georgiai.ttf", 15), -78, S_FLAT + 40, 1.12, PRINT)
-    _stamp(tex, "height = ½ × g × time²", _font("georgia.ttf", 19), -78, S_FLAT + 12, 1.12, PRINT)
+    # small type is bold and pre-stretched tall: the foot of the curl squashes it flat. The law itself is on the floor.
+    _stamp(tex, "Why do things fall faster?", _font("georgiaz.ttf", 18), -78, S_FLAT + 26, 1.8, PRINT)
     # tower diagram (left of the heading): a tower, the ground, and a strobe of a falling ball spreading out
     img = Image.new("L", (110, 130), 0)
     d = ImageDraw.Draw(img)

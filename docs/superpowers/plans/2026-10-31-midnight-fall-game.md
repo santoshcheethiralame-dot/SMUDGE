@@ -82,12 +82,12 @@ afterLab: foot   "Now we know the balcony."
 - Store the answers in `localStorage["smudge.exit"]`. Right answers get a gold tick; wrong ones show the right
   answer for 2 s. No scolding.
 
-### 7. Observatory Live tab (from the earlier game plan, Task 1)
-- Still wanted: docked on the side during the interrogation, it is how the judges see the agents think. Build it
-  after task 4 unless Santosh says otherwise.
+### 7. Hook up what you already built
+- The Observatory Live tab and its dock (Shift+`) and hold-to-talk voice are merged. Make sure both work in
+  this case: the dock open during the interrogation, and voice in the ask box for the "make her confess" moment.
 
 ## Not now
-Voice, the red-team and replay tabs, thought bubbles. They come back only if tasks 1–6 are done and rehearsed.
+The red-team and replay tabs, thought bubbles. They come back only if tasks 1–7 are done and rehearsed.
 
 ## Checks before every commit
 `cd game && npx tsc --noEmit` green, and the case plays start to finish on `?case=fall&fixture`.

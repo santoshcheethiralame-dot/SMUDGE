@@ -106,9 +106,11 @@ export function prefetch(who: string, text: string) {
   const k = clipKey(who, text);
   if (!text.trim() || isMuted() || Date.now() < ttsDownUntil || clips.has(k)) return;
   if (clips.size > 80) { const old = clips.keys().next().value!; clips.delete(old); clipsReady.delete(old); }
+  const t0 = performance.now();
   clips.set(k, fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ who, text }) })
     .then(async (r) => {
       if (!r.ok) { ttsDownUntil = Date.now() + (r.status === 503 ? 600_000 : 15_000); clips.delete(k); return null; }
+      console.debug(`[tts] ${r.headers.get("x-tts-ms") ?? "?"} ms on the server, ${Math.round(performance.now() - t0)} ms in all`);
       const a = new Audio(URL.createObjectURL(await r.blob()));
       a.preload = "auto";
       ttsWorked = true;
@@ -120,7 +122,7 @@ export function prefetch(who: string, text: string) {
 
 /** Resolves when the line's audio is ready, or after `ms`, whichever comes first, so text and voice can start together
  *  without a slow or dead Sarvam ever holding the text back. */
-export async function ready(who: string, text: string, ms = 1500): Promise<void> {
+export async function ready(who: string, text: string, ms = 2500): Promise<void> {
   prefetch(who, text);
   const p = clips.get(clipKey(who, spoken(text)));
   if (p) await Promise.race([p, new Promise((r) => setTimeout(r, ms))]);

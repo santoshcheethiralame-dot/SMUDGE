@@ -2,6 +2,7 @@
 import json
 import os
 import random
+import time
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request, Response
@@ -111,7 +112,9 @@ class Say(BaseModel):
 def text_to_speech(req: Say):
     """A line in, spoken audio (mp3) out. Any error status tells the browser to use its own voice instead."""
     try:
-        return Response(tts.synthesize(req.who, req.text), media_type="audio/mpeg")
+        t0 = time.perf_counter()
+        audio = tts.synthesize(req.who, req.text)
+        return Response(audio, media_type="audio/mpeg", headers={"x-tts-ms": str(round((time.perf_counter() - t0) * 1000))})
     except tts.TtsError as e:
         raise HTTPException(e.status, e.why)
 

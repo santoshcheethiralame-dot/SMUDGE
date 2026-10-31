@@ -91,9 +91,9 @@ export class ColdOpen extends Phaser.Scene {
         .setOrigin(0.5).setAlpha(0).setDepth(20);
       this.tweens.add({ targets: t, alpha: 1, duration: 500, yoyo: true, hold, onComplete: () => t.destroy() });
     });
-    caption(900, "Midnight. Rain. The old clock tower.", 2200);
-    caption(10300, "Someone fell. It was not a normal fall.", 1100);
-    caption(13900, "What is this place?", 900);
+    caption(900, "Hollowmere Manor. Midnight. Rain on the clock tower.", 2200);
+    caption(10300, "Old Tock fell. The house blames the ghost.", 1100);
+    caption(13900, "Ghost, or gravity?", 900);
     at(16000, () => this.finish());
 
     this.input.keyboard?.once("keydown", () => this.finish());

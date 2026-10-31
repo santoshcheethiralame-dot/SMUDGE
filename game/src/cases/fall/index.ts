@@ -47,8 +47,8 @@ const CASE: CaseDef = {
     { who: "smudge", expr: "thinking", text: "Lightning reveals clues hidden in the rain." }],
   // the early wrong guess (a nervous Pendle on the top floor looks guilty), then Footnote's "check it" and the way to check
   afterFirst: [
-    { who: "smudge", expr: "determined", text: "Pendle's nervous, and his room is highest. It's him!" },
-    { who: "foot", expr: "neutral", text: "A hunch isn't evidence. The lab will tell us." },
+    { who: "smudge", expr: "determined", text: "Pendle's shaking, and his clock room is highest. It's him!" },
+    { who: "foot", expr: "neutral", text: "A hunch isn't proof, Smudge. Let the lab decide." },
   ],
   toLab: { who: "smudge", expr: "determined", text: "The gramophone caught every sound." },
   afterLab: { who: "foot", expr: "happy", text: "Now we know the balcony." },

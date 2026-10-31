@@ -16,7 +16,7 @@ const Rec: any = (window as any).SpeechRecognition ?? (window as any).webkitSpee
 export const canListen = () => Boolean(Rec) && voiceMode() !== "off";
 
 /** Start listening; onText gets interim and final transcripts. Call the returned function to stop. */
-export function listen(onText: (text: string, final: boolean) => void): () => void {
+export function listen(onText: (text: string, final: boolean) => void, onError?: (why: string) => void): () => void {
   hush();                                    // talking over a suspect cuts them off
   const rec = new Rec();
   rec.lang = "en-IN";
@@ -30,10 +30,23 @@ export function listen(onText: (text: string, final: boolean) => void): () => vo
     }
     onText(text.trim(), final);
   };
-  rec.onerror = () => { /* no mic, denied, or offline: typing still works */ };
+  rec.onerror = (e: any) => { onError?.(String(e?.error ?? "error")); };   // typing still works
   try { rec.start(); } catch { /* already running */ }
   return () => { try { rec.stop(); } catch { /* already stopped */ } };
 }
+
+/** Each speaker gets their own installed voice (stable from their id), so the cast doesn't all sound alike.
+ *  English voices first; Footnote and Smudge take the first two so they stay distinct from the suspects. */
+function pickVoice(who: string): SpeechSynthesisVoice | null {
+  const all = speechSynthesis.getVoices();
+  const en = all.filter((x) => /^en/i.test(x.lang));
+  const pool = en.length ? en : all;
+  if (!pool.length) return null;
+  const fixed: Record<string, number> = { smudge: 0, foot: 1 };
+  const h = [...who].reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7) >>> 0;
+  return pool[(fixed[who] ?? 2 + (h % Math.max(1, pool.length - 2))) % pool.length];
+}
+if ("speechSynthesis" in window) speechSynthesis.getVoices();   // voices load lazily in Chrome; warm the list
 
 let talking = false;
 let finish: (() => void) | null = null;       // ends the line being spoken, so nothing waits on a speech that never ends
@@ -51,7 +64,8 @@ export function speak(who: string, text: string): Promise<void> {
   const u = new SpeechSynthesisUtterance(text);
   u.pitch = Math.min(2, Math.max(0.1, mid / 220));
   u.rate = Math.min(1.3, Math.max(0.75, 0.8 + mid / 1500));
-  u.lang = "en-IN";
+  const pick = pickVoice(who);
+  if (pick) { u.voice = pick; u.lang = pick.lang; } else u.lang = "en-IN";
   talking = true;
   return new Promise((resolve) => {
     // Chrome sometimes never fires onend (no voices installed, a long line, a tab in the background), which would

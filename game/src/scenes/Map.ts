@@ -19,9 +19,9 @@ const SLATE: { num: number; title: string; place: string; chapter: string }[] = 
   { num: 8, title: "The Colour Swap", place: "Acid Alley", chapter: "Acids and bases" },
   { num: 9, title: "The Slow Lift", place: "Watt Works", chapter: "Work and power" },
 ];
-// Nine chapters on a trail that snakes down the left page, across the foot of the book and up the right page.
+// Ten chapters on a trail that snakes down the left page, across the foot of the book and up the right page.
 // Each spot is the foot of a pop-up; its label sits to the right, the trail runs down the left.
-const SPOTS = [[100, 79], [100, 120], [100, 161], [100, 202], [100, 243], [330, 243], [330, 193], [330, 143], [330, 93]];
+const SPOTS = [[100, 79], [100, 120], [100, 161], [100, 202], [100, 243], [330, 243], [330, 202], [330, 161], [330, 120], [330, 79]];
 const TRAIL_X = [56, 282];
 
 export class CaseMap extends Phaser.Scene {

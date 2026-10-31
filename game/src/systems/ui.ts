@@ -120,7 +120,10 @@ export function askBox(scene: Phaser.Scene, chips: string[], placeholder: string
       mic.style.background = "#F07AAE";
       input.value = "";
       input.placeholder = "Listening... let go to send";
-      stop = listen((text) => { input.value = text; });
+      stop = listen((text) => { input.value = text; }, (why) => {
+        input.placeholder = why === "not-allowed" || why === "service-not-allowed" ? "Mic blocked: allow it in the browser, or type"
+          : why === "network" ? "Speech needs internet (Chrome sends audio to Google). Type instead" : `Mic problem (${why}). Type instead`;
+      });
     };
     const up = () => {
       if (!stop) return;
@@ -131,7 +134,7 @@ export function askBox(scene: Phaser.Scene, chips: string[], placeholder: string
       setTimeout(() => {
         const v = input.value.trim();
         if (v) finish(v);
-        else input.placeholder = "Didn't catch that. Hold 🎙 and try again, or type.";
+        else if (input.placeholder.startsWith("Listening")) input.placeholder = "Didn't catch that. Hold 🎙 and try again, or type.";
       }, 600);
     };
     mic.addEventListener("pointerdown", down);

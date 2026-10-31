@@ -401,6 +401,7 @@ export class District extends Phaser.Scene {
       sp?.play(`${who}_talk_S`, true);
       const r = await api.ask(who, q);
       const spoken = speak(who, r.answer);
+      // long replies are paged by Dialogue.say, so speech and transcript keep the full text
       await this.dlg.say({ who: who as Who, expr: /nothing|none|never|wasn't|not me/i.test(r.answer) ? "smug" : "neutral", text: r.answer });
       await spoken;
       sp?.play(`${who}_idle_S`, true);

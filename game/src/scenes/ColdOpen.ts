@@ -1,5 +1,5 @@
-// The Midnight Fall's cold open (15 s): rain, the clock strikes twelve, lightning shows a figure on the tower,
-// a cry, a thud, black, then the title card. No text until the card. Any key or click skips it.
+// The Midnight Fall's cold open (16 s): rain, the clock strikes twelve, lightning shows a figure on the tower,
+// a cry, a thud, black, then the title card. Three short caption beats (place, the fall, "what is this place?"). Any key or click skips it.
 // It runs on top of a paused District and resumes it when done (see cases/fall/index.ts).
 import Phaser from "phaser";
 import * as Tone from "tone";
@@ -61,7 +61,16 @@ export class ColdOpen extends Phaser.Scene {
         .setOrigin(0.5).setAlpha(0).setDepth(20);
       this.tweens.add({ targets: title, alpha: 1, duration: 900 });
     });
-    at(15200, () => this.finish());
+    // three caption beats, under 40 words: the place and mood, the strange fall, then the question. They hint at nothing about the lie.
+    const caption = (ms: number, text: string, hold: number) => at(ms, () => {
+      const t = this.add.text(W / 2, H - 40, text, { fontFamily: DISPLAY, fontSize: "11px", color: "#C9D2E8", align: "center", wordWrap: { width: W - 60 } })
+        .setOrigin(0.5).setAlpha(0).setDepth(20);
+      this.tweens.add({ targets: t, alpha: 1, duration: 500, yoyo: true, hold, onComplete: () => t.destroy() });
+    });
+    caption(900, "Midnight. Rain. The old clock tower.", 2200);
+    caption(10300, "Someone fell. It was not a normal fall.", 1100);
+    caption(13900, "What is this place?", 900);
+    at(16000, () => this.finish());
 
     this.input.keyboard?.once("keydown", () => this.finish());
     this.input.once("pointerdown", () => this.finish());

@@ -37,7 +37,20 @@ export class Prologue extends Phaser.Scene {
       .setOrigin(1, 1).setPadding(4, 2, 4, 2).setDepth(2000).setInteractive({ useHandCursor: true });
     skip.on("pointerdown", (_p: any, _x: any, _y: any, e: any) => { e?.stopPropagation?.(); this.skipTo(); });
 
+    // a way to the casebook for players who want to pick a case themselves
+    const book = this.add.text(W - 8, 270 - 28, "Casebook ▸", { fontFamily: FONT, fontSize: "9px", color: "#E9D9B4", backgroundColor: "#0E1938" })
+      .setOrigin(1, 1).setPadding(4, 2, 4, 2).setDepth(2000).setInteractive({ useHandCursor: true });
+    book.on("pointerdown", (_p: any, _x: any, _y: any, e: any) => { e?.stopPropagation?.(); this.toCasebook(); });
+
     this.run(erased);
+  }
+
+  private async toCasebook() {
+    if (this.skipped) return;
+    this.skipped = true;
+    this.cameras.main.fadeOut(300, 5, 6, 15);
+    await wait(this, 320);
+    this.scene.start("Map", { from: "prologue" });
   }
 
   private async skipTo() {

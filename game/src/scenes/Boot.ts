@@ -68,7 +68,7 @@ export class Boot extends Phaser.Scene {
       }
     }
     try {
-      await Promise.all([document.fonts.load(`10px ${FONT}`), document.fonts.load(`10px "Smudge Digits"`, "023456789"), document.fonts.load(`40px ${DISPLAY}`)]);
+      await Promise.all([document.fonts.load(`10px ${FONT}`), document.fonts.load(`40px ${DISPLAY}`)]);
     } catch { /* fonts are a nicety; fall back silently */ }
     // ?case=<kit> drops straight into a district; ?scene=<Scene> into any scene
     const q = new URLSearchParams(location.search);

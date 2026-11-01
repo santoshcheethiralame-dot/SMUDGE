@@ -15,7 +15,7 @@ export function run(ctx: LabCtx, step: NotebookStep): Promise<void> {
     dlg.say({ who: "foot", expr: "neutral", text: step.hint });
     const wrap = document.createElement("form");
     wrap.setAttribute("aria-label", "Notebook");
-    wrap.style.cssText = `font-family:"Smudge Digits","DotGothic16",monospace;background:#F2E9CF;border:2px solid #0E1938;border-radius:4px;
+    wrap.style.cssText = `font-family:"DotGothic16",monospace;background:#F2E9CF;border:2px solid #0E1938;border-radius:4px;
       padding:8px 10px;box-sizing:border-box;display:flex;flex-direction:column;gap:5px;color:#0E1938;overflow:auto;
       background-image:repeating-linear-gradient(#F2E9CF 0 15px,#9cb8dc 15px 16px);`;
     const box = (f: (typeof fields)[number]) =>

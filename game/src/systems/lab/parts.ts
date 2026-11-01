@@ -35,7 +35,7 @@ export function clicked(obj: Phaser.GameObjects.GameObject) {
 /** A small HTML box over the canvas for typing a reading; resolves with the number when Record is pressed. */
 export function readingBox(scene: Phaser.Scene, x: number, y: number, unit: string): { value: Promise<number>; remove: () => void } {
   const wrap = document.createElement("form");
-  wrap.style.cssText = `font-family:"Smudge Digits","DotGothic16",monospace;background:#F2E9CF;border:2px solid #0E1938;border-radius:4px;padding:4px 6px;
+  wrap.style.cssText = `font-family:"DotGothic16",monospace;background:#F2E9CF;border:2px solid #0E1938;border-radius:4px;padding:4px 6px;
     box-sizing:border-box;display:flex;gap:6px;align-items:center;color:#0E1938`;
   wrap.innerHTML = `<input id="reading" inputmode="decimal" autocomplete="off" aria-label="Your reading"
       style="width:4.6em;font:inherit;padding:1px 4px;border:1.5px solid #0E1938;background:#FFFBEF;color:#0E1938;border-radius:3px">

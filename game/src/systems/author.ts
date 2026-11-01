@@ -18,11 +18,11 @@ const CSS = `
   position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:rgba(5,6,15,.72);font:14px/1.5 "Segoe UI",system-ui,sans-serif;color:var(--ink)}
 #author .box{background:var(--bg);border:1px solid var(--rule);border-top:3px solid #C9302A;width:min(760px,94vw);max-height:92vh;overflow:auto;
   padding:18px 20px;display:grid;gap:12px;box-shadow:0 10px 0 rgba(0,0,0,.35)}
-#author .eyebrow{font:600 11px/1.2 "Smudge Digits","DotGothic16",monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--foot)}
+#author .eyebrow{font:600 11px/1.2 "DotGothic16",monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--foot)}
 #author h2{font:400 26px/1.1 "Lilita One","Trebuchet MS",sans-serif;margin:2px 0 0}
 #author form{display:flex;gap:8px;flex-wrap:wrap}
 #author input{flex:1 1 18em;font:16px/1.2 "Segoe UI",system-ui,sans-serif;padding:9px 11px;border-radius:3px;border:1.5px solid var(--soft);background:#0E1430;color:var(--ink)}
-#author button{font:600 13px/1 "Smudge Digits","DotGothic16",monospace;padding:9px 13px;border-radius:3px;border:1.5px solid var(--soft);background:transparent;color:var(--ink);cursor:pointer}
+#author button{font:600 13px/1 "DotGothic16",monospace;padding:9px 13px;border-radius:3px;border:1.5px solid var(--soft);background:transparent;color:var(--ink);cursor:pointer}
 #author button.go{border-color:var(--pen);background:#C9302A;color:#fff}
 #author button:disabled{opacity:.5;cursor:default}
 #author button:focus-visible,#author input:focus-visible{outline:3px solid var(--foot);outline-offset:2px}
@@ -34,10 +34,10 @@ const CSS = `
 @keyframes au-pulse{50%{opacity:.4}} @media (prefers-reduced-motion:reduce){#author .pill.wait{animation:none}}
 #author .feed{background:var(--card);border:1px solid var(--rule);border-radius:4px;padding:10px 12px;display:grid;gap:4px;font-size:13px}
 #author .feed:empty{display:none}
-#author .tag{font:600 11px/1 "Smudge Digits","DotGothic16",monospace;padding:3px 6px;border-radius:2px;border:1px solid var(--gold);color:var(--gold);margin-right:6px}
+#author .tag{font:600 11px/1 "DotGothic16",monospace;padding:3px 6px;border-radius:2px;border:1px solid var(--gold);color:var(--gold);margin-right:6px}
 #author .done{background:#F2E9CF;color:#0E1938;border:2px solid #0E1938;border-radius:4px;padding:12px 14px;display:grid;gap:6px}
 #author .done h3{margin:0;font:400 22px/1.1 "Lilita One","Trebuchet MS",sans-serif}
-#author .done .f{font:600 18px/1.2 "Smudge Digits","DotGothic16",monospace;color:#C9302A}
+#author .done .f{font:600 18px/1.2 "DotGothic16",monospace;color:#C9302A}
 #author .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 #author .muted{color:var(--soft)}
 `;

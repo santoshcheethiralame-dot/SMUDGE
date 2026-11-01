@@ -384,7 +384,7 @@ ${b.h} m`, 7, "#F2E9CF").setLineSpacing(1);
     return new Promise((resolve) => {
       const form = document.createElement("form");
       form.setAttribute("aria-label", "Notebook");
-      form.style.cssText = `font-family:"Smudge Digits","DotGothic16",monospace;background:#F2E9CF;border:2px solid #0E1938;border-radius:4px;
+      form.style.cssText = `font-family:"DotGothic16",monospace;background:#F2E9CF;border:2px solid #0E1938;border-radius:4px;
         padding:8px 10px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;color:#0E1938;
         background-image:repeating-linear-gradient(#F2E9CF 0 15px,#9cb8dc 15px 16px);`;
       const box = (id: string, value = "", readonly = false) =>

@@ -9,7 +9,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-2C66AE?style=flat-square&logo=typescript&logoColor=white)](game)
 [![Python](https://img.shields.io/badge/Python-3.12-2E764C?style=flat-square&logo=python&logoColor=white)](server)
 [![FastAPI](https://img.shields.io/badge/FastAPI-agents-1F8C86?style=flat-square&logo=fastapi&logoColor=white)](server/api.py)
-[![Tests](https://img.shields.io/badge/server%20tests-392%20passing-409560?style=flat-square)](server/tests)
+[![Tests](https://img.shields.io/badge/server%20tests-403%20passing-409560?style=flat-square)](server/tests)
 [![Cost](https://img.shields.io/badge/running%20cost-%E2%82%B90-E6B43A?style=flat-square)](#running-cost)
 
 <img src="docs/media/courtyard.png" alt="The courtyard of Hollowmere Manor at midnight: rain, three suspects, a gramophone and the formula h = ½gt²" width="100%">
@@ -218,7 +218,7 @@ SMUDGE/
 │   ├── agents.py          suspects, Footnote, detective
 │   ├── author.py          Designer → Solver → Critic → Casting → Gate
 │   ├── gate.py            release gate: python gate.py 6 <kit>
-│   └── tests/             392 tests, all offline
+│   └── tests/             403 tests, all offline
 ├── art/                   SDF scene and character renderers
 └── docs/                  handoff, case guide, demo script, specs
 ```
@@ -226,7 +226,7 @@ SMUDGE/
 ## Testing
 
 ```bash
-cd server && python -m pytest tests -q     # 392 tests, no keys or network needed
+cd server && python -m pytest tests -q     # 403 tests, no keys or network needed
 npm --prefix game run build                # type-check and production build
 cd server && python gate.py 6 fall         # release gate for one case (uses free model quota)
 ```

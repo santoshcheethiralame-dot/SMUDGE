@@ -2,9 +2,9 @@
 // and the call to the stage. One scene serves every case: the layout, scenery and lines come from the case's
 // folder in src/cases, the facts from the server's case. Start it with { kit, from }.
 import Phaser from "phaser";
-import { W, FONT, DISPLAY, FEET_ORIGIN, JUDGES, project, dirFromVector, Dir } from "../consts";
+import { W, H, FONT, DISPLAY, FEET_ORIGIN, JUDGES, project, dirFromVector, Dir } from "../consts";
 import { Dialogue, Who } from "./dialogue";
-import { makeGlow, makePixel, wait, pageReveal, tween } from "./fx";
+import { makeGlow, makePixel, wait, pageReveal, pageTurn, tween } from "./fx";
 import { askBox } from "./ui";
 import { sfx, step, music, themeFor, layer, ambience, sting, type Ground } from "../audio";
 import { api } from "../api";
@@ -35,6 +35,7 @@ export class District extends Phaser.Scene {
   protected smudge!: Phaser.GameObjects.Sprite;
   protected foot!: Phaser.GameObjects.Sprite;
   protected busy = false;
+  private leaving = false;
   private shadow!: Phaser.GameObjects.Ellipse;
   private target: { x: number; y: number; spot?: Spot } | null = null;
   private dir: Dir = "E";
@@ -71,6 +72,7 @@ export class District extends Phaser.Scene {
   }
 
   async create(data: { kit?: string; from?: string }) {
+    this.leaving = false;
     this.content = CASES[data?.kit ?? progress.kit];
     this.busy = true;
     this.target = null;
@@ -125,6 +127,7 @@ export class District extends Phaser.Scene {
     this.input.on("pointerdown", (p: Phaser.Input.Pointer) => this.onTap(p));
     this.input.keyboard?.on("keydown-E", () => this.tryInteract());
     this.input.keyboard?.on("keydown", () => { this.idleMs = 0; });
+    this.input.keyboard?.on("keydown-ESC", () => this.casebookPrompt());
 
     themeFor(this.content.kit);
     ambience(this.content.kit, restored);
@@ -228,6 +231,27 @@ export class District extends Phaser.Scene {
 
   private nearest(): Spot | undefined {
     return this.spots.find((s) => Math.abs(this.smudge.x - s.x) < 24);
+  }
+
+  /** Esc offers a way out to the casebook. Draws nothing until pressed; Esc again, or "Stay", closes it. */
+  private casebookPrompt() {
+    if (this.busy || this.dlg.active || this.leaving) return;
+    this.busy = true;
+    const items: Phaser.GameObjects.GameObject[] = [];
+    const add = <T extends Phaser.GameObjects.GameObject>(o: T) => { items.push(o); return o; };
+    const close = () => { items.forEach((o) => o.destroy()); this.input.keyboard?.off("keydown-ESC", close); this.busy = false; };
+    add(this.add.rectangle(W / 2, H / 2, W, H, 0x05060f, 0.6).setScrollFactor(0).setDepth(3000).setInteractive());
+    add(this.add.text(W / 2, H / 2 - 22, "Back to the casebook?\nThis case's progress is lost.", { fontFamily: FONT, fontSize: "11px", color: "#F2E9CF", align: "center", lineSpacing: 4 })
+      .setOrigin(0.5).setScrollFactor(0).setDepth(3001));
+    const btn = (x: number, label: string, fill: string, fn: () => void) => add(this.add.text(x, H / 2 + 18, label, { fontFamily: FONT, fontSize: "10px", color: "#FFFFFF", backgroundColor: fill })
+      .setPadding(10, 4, 10, 4).setOrigin(0.5).setScrollFactor(0).setDepth(3001).setInteractive({ useHandCursor: true }).on("pointerup", fn));
+    btn(W / 2 - 50, "Stay", "#2E5CAD", close);
+    btn(W / 2 + 50, "Casebook", "#55361A", () => {
+      this.leaving = true;
+      this.input.keyboard?.off("keydown-ESC", close);
+      pageTurn(this, () => { this.scene.start("Map"); });
+    });
+    this.input.keyboard?.once("keydown-ESC", close);
   }
 
   private tryInteract() {

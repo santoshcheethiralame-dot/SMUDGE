@@ -6,6 +6,7 @@ import base64
 import hashlib
 import os
 import re
+import time
 import shutil
 import subprocess
 from collections import OrderedDict
@@ -145,13 +146,22 @@ def synthesize(who: str, text: str, client: httpx.Client | None = None) -> bytes
     if ck in _cache:
         _cache.move_to_end(ck)
         return _cache[ck]
-    try:
-        c = client or _http()
-        r = c.post(URL, headers={"api-subscription-key": key}, json={
-            "text": pronounce(text), "language_code": "en-IN", "model": MODEL, "speaker": ck[0],
-            "output_audio_codec": "mp3", "speech_sample_rate": 16000})
-    except httpx.HTTPError as e:
-        raise TtsError(502, f"sarvam unreachable: {type(e).__name__}")
+    c = client or _http()
+    body = {"text": pronounce(text), "language_code": "en-IN", "model": MODEL, "speaker": ck[0],
+            "output_audio_codec": "mp3", "speech_sample_rate": 16000}
+    r = None
+    for attempt in (1, 2):             # one retry for a rate limit, a 5xx or a timeout, so a hiccup does not change a voice
+        try:
+            r = c.post(URL, headers={"api-subscription-key": key}, json=body)
+        except httpx.HTTPError as e:
+            if attempt == 2:
+                raise TtsError(502, f"sarvam unreachable: {type(e).__name__}")
+        else:
+            if r.status_code != 429 and r.status_code < 500:
+                break
+            if attempt == 2:
+                break
+        time.sleep(0.4)
     if r.status_code != 200:
         raise TtsError(502, f"sarvam {r.status_code}")
     try:

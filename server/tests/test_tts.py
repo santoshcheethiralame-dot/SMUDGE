@@ -103,3 +103,9 @@ def test_tighten_keeps_the_clip_when_ffmpeg_fails(monkeypatch):
     assert tts.tighten(b"raw") == b"raw"
     monkeypatch.setattr(tts.shutil, "which", lambda name: "ffmpeg")
     assert tts.tighten(b"not an mp3") == b"not an mp3"
+
+
+def test_one_rate_limit_is_retried(monkeypatch):
+    monkeypatch.setattr(tts.time, "sleep", lambda s: None)
+    answers = iter([httpx.Response(429, json={}), httpx.Response(200, json={"audios": [base64.b64encode(b"OK").decode()]})])
+    assert tts.synthesize("volta", "A retry.", _mock(lambda r: next(answers))) == b"OK"

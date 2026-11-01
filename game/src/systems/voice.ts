@@ -8,6 +8,10 @@ const Rec: any = (window as any).SpeechRecognition ?? (window as any).webkitSpee
 const canRecord = () => Boolean(navigator.mediaDevices?.getUserMedia) && typeof MediaRecorder !== "undefined";
 export const canListen = () => Boolean(Rec) || canRecord();
 
+// Which transcript is sent when both exist. The box shows the browser's words while you hold the mic, so by default
+// those are what is sent; Sarvam answers only when the browser has nothing (no Web Speech, or it heard nothing).
+// Add ?stt=sarvam to the URL to make Sarvam win instead.
+const PREFER_SARVAM = new URLSearchParams(location.search).get("stt") === "sarvam";
 const SARVAM_WAIT = 4000;   // after release, how long Sarvam gets before the browser's own transcript is used
 
 /** Send a clip to the server, which asks Sarvam (the key lives there). Resolves null on any failure. */
@@ -74,9 +78,17 @@ export function listen(onText: (text: string, final: boolean) => void, onError?:
     stopped = true;
     try { rec?.stop(); } catch { /* already stopped */ }
     try { if (recorder && recorder.state !== "inactive") recorder.stop(); } catch { /* already stopped */ }
+    if (Rec && !PREFER_SARVAM) {
+      await new Promise((r) => setTimeout(r, 600));                   // the browser's last words arrive just after release
+      if (local) {                                                    // what the box showed is what is sent; no second opinion
+        console.debug(`[mic] sent browser text: "${local}" (sarvam not asked)`);
+        onText(local, true);
+        return;
+      }
+    }
     const blob = await Promise.race([clip, new Promise<null>((r) => setTimeout(() => r(null), 1500))]);
     const text = blob ? await sarvam(blob) : null;
-    if (Rec && !text) await new Promise((r) => setTimeout(r, 600));   // the browser's last words arrive just after release
+    if (Rec && PREFER_SARVAM && !text) await new Promise((r) => setTimeout(r, 600));
     console.debug(`[mic] browser: "${local}" | sarvam: ${text === null ? "none" : `"${text}"`} | sent: "${text ?? local}"`);
     onText(text ?? local, true);                                      // one final text, and it is the one that is sent
   };

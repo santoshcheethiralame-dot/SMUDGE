@@ -113,12 +113,19 @@ if ("speechSynthesis" in window) speechSynthesis.getVoices();   // voices load l
 // Spoken lines come from Sarvam (through the server) when it answers, and from the browser's own voice when it doesn't.
 const clips = new Map<string, Promise<HTMLAudioElement | null>>();
 const clipsReady = new Map<string, HTMLAudioElement>();
-let ttsWorked = false;                       // once Sarvam has answered, a slow line waits for it rather than switching to a different voice
+let ttsFails = 0;                            // consecutive failures; one hiccup must not switch every speaker to the browser voice
 let ttsDownUntil = 0;                        // after a failure, skip Sarvam for a while so a dead service never delays a line
 let gen = 0;                                 // bumps on every hush(), so a late clip knows it was cut off
 let clip: HTMLAudioElement | null = null;    // the line playing right now, if it is a Sarvam clip
 const spoken = (text: string) => speakable(text.replace(/^\*+\s*/, ""));
 const clipKey = (who: string, text: string) => `${who}\u0001${text}`;
+
+/** A Sarvam failure: no key (503) turns it off for good; anything else only after two in a row, and only briefly. */
+function failed(downMs: number, hard: boolean) {
+  ttsFails++;
+  if (hard || ttsFails >= 2) ttsDownUntil = Date.now() + downMs;
+  console.debug(`[tts] failed (${ttsFails} in a row)${Date.now() < ttsDownUntil ? ", browser voice for now" : ""}`);
+}
 
 /** Start fetching a line's audio now, so it is ready by the time the line is shown. Safe to call twice. */
 export function prefetch(who: string, text: string) {
@@ -127,17 +134,19 @@ export function prefetch(who: string, text: string) {
   if (!text.trim() || isMuted() || Date.now() < ttsDownUntil || clips.has(k)) return;
   if (clips.size > 80) { const old = clips.keys().next().value!; clips.delete(old); clipsReady.delete(old); }
   const t0 = performance.now();
-  clips.set(k, fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ who, text }) })
+  const get = () => fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ who, text }) });
+  clips.set(k, get()
     .then(async (r) => {
-      if (!r.ok) { ttsDownUntil = Date.now() + (r.status === 503 ? 600_000 : 15_000); clips.delete(k); return null; }
-      console.debug(`[tts] ${r.headers.get("x-tts-ms") ?? "?"} ms on the server, ${Math.round(performance.now() - t0)} ms in all`);
+      if (!r.ok && r.status !== 503) { await new Promise((x) => setTimeout(x, 300)); r = await get(); }   // one retry: a hiccup must not change a voice
+      if (!r.ok) { failed(r.status === 503 ? 600_000 : 10_000, r.status === 503); clips.delete(k); return null; }
+      console.debug(`[tts] ${who}: ${r.headers.get("x-tts-ms") ?? "?"} ms on the server, ${Math.round(performance.now() - t0)} ms in all`);
       const a = new Audio(URL.createObjectURL(await r.blob()));
       a.preload = "auto";
-      ttsWorked = true;
+      ttsFails = 0;
       clipsReady.set(k, a);
       return a;
     })
-    .catch(() => { ttsDownUntil = Date.now() + 15_000; clips.delete(k); return null; }));
+    .catch(() => { failed(10_000, false); clips.delete(k); return null; }));
 }
 
 /** Resolves when the line's audio is ready, or after `ms`, whichever comes first, so text and voice can start together
@@ -162,13 +171,14 @@ export function speak(who: string, text: string): Promise<void> {
   if (a) return playClip(a, () => browserSpeak(who, text));
   prefetch(who, text);
   const pending = clips.get(k);
-  // Sarvam is working but this clip is late: wait for it (up to 6 s) so the speaker keeps their own voice.
-  // Only when Sarvam is down or has never answered does the browser voice speak the line.
-  if (pending && ttsWorked) {
+  // The clip is late: wait for it (up to 6 s) so the speaker keeps their own voice, even for the first line of the
+  // session. Only when Sarvam is down (no pending clip) or the wait ends does the browser voice speak the line.
+  if (pending) {
     const mine = gen;             // a newer line or hush() in the meantime means this one is no longer wanted
     return Promise.race([pending, new Promise<null>((r) => setTimeout(() => r(null), 6000))]).then((c) =>
-      c && gen === mine ? playClip(c, () => browserSpeak(who, text)) : c ? undefined : gen === mine ? browserSpeak(who, text) : undefined);
+      c && gen === mine ? playClip(c, () => browserSpeak(who, text)) : c ? undefined : gen === mine ? (console.debug(`[tts] browser voice for ${who}: no clip in 6 s`), browserSpeak(who, text)) : undefined);
   }
+  console.debug(`[tts] browser voice for ${who}: Sarvam is off or down`);
   return browserSpeak(who, text);
 }
 
@@ -180,9 +190,9 @@ function playClip(a: HTMLAudioElement, fallback: () => Promise<void>): Promise<v
     finish = done;
     clip = a;
     a.onended = done;
-    a.onerror = () => { done(); void fallback(); };
+    a.onerror = () => { console.debug("[tts] browser voice: the clip would not play"); done(); void fallback(); };
     a.currentTime = 0;
-    a.play().catch(() => { done(); void fallback(); });
+    a.play().catch((e) => { console.debug(`[tts] browser voice: play() refused (${e?.name})`); done(); void fallback(); });
   });
 }
 

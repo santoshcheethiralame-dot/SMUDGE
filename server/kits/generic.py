@@ -33,12 +33,47 @@ _OPS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul, as
 _I = r"\bi(?:'ve| have| did| had)?(?: (?!never\b|not\b|neither\b|nor\b)\w+){0,2} "
 
 
+_TOKEN = re.compile(r"\s*(\d+(?:\.\d+)?|\.\d+|[^\W\d]\w*|\*\*|[-+*/()])")
+
+
+def _split_symbols(word: str, names: set[str]) -> list[str]:
+    """'kq1q2' -> ['k', 'q1', 'q2'] using the known symbols (fewest pieces wins); the word itself if it can't be split."""
+    best: dict[int, list[str] | None] = {0: []}
+    for end in range(1, len(word) + 1):
+        options = [best[i] + [word[i:end]] for i in range(end) if best.get(i) is not None and word[i:end] in names]
+        best[end] = min(options, key=len) if options else None
+    return best[len(word)] or [word]
+
+
+def _implicit_times(rhs: str, names: set[str]) -> str:
+    """Textbook shorthand to explicit arithmetic: 'kq1q2/r' -> 'k*q1*q2/r', 'ρL/A' -> 'ρ*L/A', '2(a+b)' -> '2*(a+b)'."""
+    out, pos = [], 0
+    while pos < len(rhs):
+        m = _TOKEN.match(rhs, pos)
+        if not m:
+            if rhs[pos:].strip():
+                raise ValueError(f"can't read the formula near {rhs[pos:].strip()[:10]!r}")
+            break
+        pos = m.end()
+        tok = m.group(1)
+        parts = _split_symbols(tok, names) if tok[0].isalpha() or tok[0] == "_" else [tok]
+        for part in parts:
+            opens = part[0].isalnum() or part[0] in "_.(" 
+            if out and opens and (out[-1][-1].isalnum() or out[-1][-1] in "_.)"):
+                out.append("*")
+            out.append(part)
+    return "".join(out)
+
+
 def parse_formula(formula: str, names: set[str]):
-    """'P = F / A' -> (output symbol, function of a dict of values). Raises ValueError on anything but arithmetic."""
+    """'P = F / A' -> (output symbol, function of a dict of values). Raises ValueError on anything but arithmetic.
+    Textbook shorthand works too: 'U = kq1q2/r', 'v = u + at', 'E = mc^2', 'R = ρL/A' (a run of known symbols is a product)."""
     if formula.count("=") != 1:
         raise ValueError("formula needs exactly one '='")
     lhs, rhs = (s.strip() for s in formula.split("="))
     rhs = rhs.replace("^", "**").replace("×", "*").replace("÷", "/").replace("²", "**2").replace("³", "**3").replace("½", "0.5*")
+    rhs = rhs.replace("·", "*").replace("⋅", "*").replace("−", "-")
+    rhs = _implicit_times(rhs, names)
     try:
         tree = ast.parse(rhs, mode="eval").body
     except SyntaxError as e:

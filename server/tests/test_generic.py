@@ -55,3 +55,25 @@ def test_wrong_working_names_the_step(spec):
     assert check_lab(c, {**w, f"out_{sid}": w[f"out_{sid}"] * 3 + 1})["step"] == "formula"
     ok = check_lab(c, w)
     assert ok["ok"] and ok["evidence"] == f"out:{c.culprit}" and kit.suspects[c.culprit]["name"] in ok["card"]["title"]
+
+
+@pytest.mark.parametrize("formula,names,env,want", [
+    ("U = kq1q2/r", {"k", "q1", "q2", "r"}, dict(k=9, q1=2, q2=3, r=6), 9),
+    ("U = k*q1*q2/r", {"k", "q1", "q2", "r"}, dict(k=9, q1=2, q2=3, r=6), 9),
+    ("v = u + at", {"u", "a", "t"}, dict(u=2, a=3, t=4), 14),
+    ("F = ma", {"m", "a"}, dict(m=2, a=5), 10),
+    ("E = mc^2", {"m", "c"}, dict(m=2, c=3), 18),
+    ("R = ρL/A", {"ρ", "L", "A"}, dict(ρ=4, L=6, A=3), 8),
+    ("P = V^2/R", {"V", "R"}, dict(V=6, R=4), 9),
+    ("E = ½mv²", {"m", "v"}, dict(m=2, v=3), 9),
+    ("y = 2(a+b)", {"a", "b"}, dict(a=1, b=2), 6),
+])
+def test_textbook_formulas_parse_with_implicit_multiplication(formula, names, env, want):
+    _, f = parse_formula(formula, names)
+    assert f(env) == pytest.approx(want)
+
+
+def test_unknown_symbols_and_code_are_still_rejected():
+    for bad in ("x = foo", "x = a.b", "x = __import__('os')", "x = a if b else a"):
+        with pytest.raises(ValueError):
+            parse_formula(bad, {"a", "b"})
